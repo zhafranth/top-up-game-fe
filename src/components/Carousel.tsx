@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 
 interface CarouselItem {
   id: string;
@@ -13,7 +13,11 @@ interface CarouselProps {
   autoPlayInterval?: number;
 }
 
-export function Carousel({ items, autoPlay = true, autoPlayInterval = 5000 }: CarouselProps) {
+export function Carousel({
+  items,
+  autoPlay = true,
+  autoPlayInterval = 5000,
+}: CarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const nextSlide = () => {
@@ -21,7 +25,9 @@ export function Carousel({ items, autoPlay = true, autoPlayInterval = 5000 }: Ca
   };
 
   const prevSlide = () => {
-    setCurrentIndex((prevIndex) => (prevIndex - 1 + items.length) % items.length);
+    setCurrentIndex(
+      (prevIndex) => (prevIndex - 1 + items.length) % items.length
+    );
   };
 
   const goToSlide = (index: number) => {
@@ -40,19 +46,19 @@ export function Carousel({ items, autoPlay = true, autoPlayInterval = 5000 }: Ca
   return (
     <div className="relative w-full h-64 md:h-80 lg:h-96 overflow-hidden rounded-2xl bg-gradient-to-br from-purple-900/50 to-blue-900/50 backdrop-blur-sm border border-purple-500/20">
       {/* Main carousel container */}
-      <div 
+      <div
         className="flex transition-transform duration-500 ease-in-out h-full"
         style={{ transform: `translateX(-${currentIndex * 100}%)` }}
       >
-        {items.map((item, index) => (
+        {items.map((item) => (
           <div key={item.id} className="w-full h-full flex-shrink-0 relative">
-            <div 
+            <div
               className="w-full h-full bg-cover bg-center relative"
               style={{ backgroundImage: `url(${item.image})` }}
             >
               {/* Overlay gradient */}
               <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-black/60"></div>
-              
+
               {/* Content */}
               <div className="absolute inset-0 flex items-center justify-center text-center px-8">
                 <div className="max-w-2xl">
@@ -79,8 +85,18 @@ export function Carousel({ items, autoPlay = true, autoPlayInterval = 5000 }: Ca
             className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/30 hover:bg-black/50 text-white p-2 rounded-full transition-all duration-200 backdrop-blur-sm border border-white/20 hover:scale-110"
             aria-label="Previous slide"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 19l-7-7 7-7"
+              />
             </svg>
           </button>
           <button
@@ -88,8 +104,18 @@ export function Carousel({ items, autoPlay = true, autoPlayInterval = 5000 }: Ca
             className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/30 hover:bg-black/50 text-white p-2 rounded-full transition-all duration-200 backdrop-blur-sm border border-white/20 hover:scale-110"
             aria-label="Next slide"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 5l7 7-7 7"
+              />
             </svg>
           </button>
         </>
@@ -104,8 +130,8 @@ export function Carousel({ items, autoPlay = true, autoPlayInterval = 5000 }: Ca
               onClick={() => goToSlide(index)}
               className={`w-3 h-3 rounded-full transition-all duration-200 ${
                 index === currentIndex
-                  ? 'bg-white scale-110'
-                  : 'bg-white/50 hover:bg-white/70'
+                  ? "bg-white scale-110"
+                  : "bg-white/50 hover:bg-white/70"
               }`}
               aria-label={`Go to slide ${index + 1}`}
             />
