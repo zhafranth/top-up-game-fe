@@ -1,11 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
 
 export function Auth() {
+  const navigate = useNavigate();
+  const { login, isAuthenticated, isLoading: authLoading } = useAuth();
+  
   // Custom CSS untuk animasi gradasi bergerak
   const animatedGradientStyle = {
     background: 'linear-gradient(-45deg, #1a1a1a, #0f0f0f, #2d1b69, #1e3a8a, #312e81)',
@@ -28,6 +33,14 @@ export function Auth() {
       document.head.removeChild(style);
     };
   }, []);
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard');
+    }
+  }, [isAuthenticated, navigate]);
+  
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -42,14 +55,37 @@ export function Auth() {
 
     setIsLoading(true);
     
-    // Simulasi login delay
-    setTimeout(() => {
+    try {
+      const success = await login(username, password);
+      
+      if (success) {
+        toast.success('Login berhasil!');
+        navigate('/dashboard');
+      } else {
+        toast.error('Username atau password salah');
+      }
+    } catch (error) {
+      toast.error('Terjadi kesalahan saat login');
+    } finally {
       setIsLoading(false);
-      toast.success('Login berhasil!');
-      // Reset form
-      setUsername('');
-      setPassword('');
-    }, 1000);
+    }
+  };
+
+  // Show loading if auth is still checking
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const handleDemoLogin = () => {
+    setUsername('admin');
+    setPassword('admin123');
   };
 
   return (
@@ -69,6 +105,19 @@ export function Auth() {
         <div className="text-center space-y-2">
           <h1 className="text-3xl font-bold text-white">Login</h1>
           <p className="text-gray-300">Masuk ke akun Anda</p>
+          <div className="mt-4 p-3 bg-blue-500/20 border border-blue-500/30 rounded-lg">
+            <p className="text-sm text-blue-200 mb-2">Demo Login:</p>
+            <p className="text-xs text-blue-300">Username: admin | Password: admin123</p>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleDemoLogin}
+              className="mt-2 text-xs bg-blue-500/20 border-blue-500/30 text-blue-200 hover:bg-blue-500/30"
+            >
+              Use Demo Credentials
+            </Button>
+          </div>
         </div>
         
         <form onSubmit={handleLogin} className="space-y-4">
@@ -83,7 +132,7 @@ export function Auth() {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               className="bg-white/5 border-white/10 text-white placeholder:text-gray-400 focus:border-white/30 focus:bg-white/10 transition-all duration-200 backdrop-blur-sm"
-              disabled={isLoading}
+              disabled={isLoading || authLoading}
             />
           </div>
           
@@ -98,14 +147,14 @@ export function Auth() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="bg-white/5 border-white/10 text-white placeholder:text-gray-400 focus:border-white/30 focus:bg-white/10 transition-all duration-200 backdrop-blur-sm"
-              disabled={isLoading}
+              disabled={isLoading || authLoading}
             />
           </div>
           
           <Button
             type="submit"
             className="w-full bg-gradient-to-r from-purple-600/80 to-blue-600/80 hover:from-purple-600 hover:to-blue-600 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200 backdrop-blur-sm border border-white/10 shadow-lg hover:shadow-xl hover:scale-[1.02]"
-            disabled={isLoading}
+            disabled={isLoading || authLoading}
           >
             {isLoading ? 'Memproses...' : 'Login'}
           </Button>
