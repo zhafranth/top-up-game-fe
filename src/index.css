@@ -32,25 +32,25 @@
   }
 
   .dark {
-    --background: 0 0% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 0 0% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 0 0% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 0 0% 9%;
-    --secondary: 0 0% 14.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 14.9%;
-    --muted-foreground: 0 0% 63.9%;
-    --accent: 0 0% 14.9%;
-    --accent-foreground: 0 0% 98%;
+    --background: 222 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222.2 84% 4.9%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 14.9%;
-    --input: 0 0% 14.9%;
-    --ring: 0 0% 83.1%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 224.3 76.3% 94.1%;
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
     --chart-3: 30 80% 55%;
@@ -65,71 +65,97 @@
   }
   body {
     @apply text-foreground;
-    background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%) !important;
+    background: linear-gradient(
+      135deg,
+      #0f0f23 0%,
+      #1a1a2e 50%,
+      #16213e 100%
+    ) !important;
     min-height: 100vh;
+    color: hsl(var(--foreground));
+  }
+  
+  html {
+    color-scheme: dark;
   }
 }
 
 /* Force dark theme background */
-html, body {
-  background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%) !important;
+html,
+body {
+  background: linear-gradient(
+    135deg,
+    #0f0f23 0%,
+    #1a1a2e 50%,
+    #16213e 100%
+  ) !important;
 }
 
 /* Override any Shadcn background utilities */
 .bg-background {
-  background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%) !important;
+  background: linear-gradient(
+    135deg,
+    #0f0f23 0%,
+    #1a1a2e 50%,
+    #16213e 100%
+  ) !important;
 }
 
 @layer components {
   .gaming-gradient {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   }
-  
+
   .gaming-card {
-    background: linear-gradient(145deg, hsl(240 3.7% 15.9%) 0%, hsl(240 5% 12%) 100%);
-    border: 1px solid hsl(240 3.7% 20%);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2), 0 1px 3px rgba(0, 0, 0, 0.1);
+    border-radius: calc(var(--radius) + 2px);
+    backdrop-filter: blur(10px);
   }
-  
-  .gaming-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 30px rgba(102, 126, 234, 0.2);
-    border-color: hsl(263 70% 50% / 0.5);
-  }
-  
+
   .popular-badge {
     background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
     box-shadow: 0 2px 10px rgba(255, 107, 107, 0.3);
   }
-  
+
   .game-image-placeholder {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
     position: relative;
     overflow: hidden;
   }
-  
+
   .game-image-placeholder::before {
-    content: '';
+    content: "";
     position: absolute;
     top: 0;
     left: -100%;
     width: 100%;
     height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.2),
+      transparent
+    );
     animation: shimmer 2s infinite;
   }
-  
+
   @keyframes shimmer {
-    0% { left: -100%; }
-    100% { left: 100%; }
+    0% {
+      left: -100%;
+    }
+    100% {
+      left: 100%;
+    }
   }
-  
+
   .wave-gradient {
     background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
     background-size: 400% 400%;
     animation: gradient-wave 15s ease infinite;
   }
-  
+
   @keyframes gradient-wave {
     0% {
       background-position: 0% 50%;
@@ -141,27 +167,36 @@ html, body {
       background-position: 0% 50%;
     }
   }
-  
+
   .feature-chip {
     @apply inline-flex items-center gap-2 px-4 py-2 rounded-full border transition-all duration-300 hover:scale-105;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.1) 0%,
+      rgba(255, 255, 255, 0.05) 100%
+    );
     border: 1px solid rgba(255, 255, 255, 0.2);
     backdrop-filter: blur(10px);
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
   }
-  
+
   .feature-chip:hover {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.1) 100%);
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.15) 0%,
+      rgba(255, 255, 255, 0.1) 100%
+    );
     border-color: rgba(255, 255, 255, 0.3);
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
   }
-  
+
   .arrow-bounce {
     animation: arrow-bounce 2s ease-in-out infinite;
   }
-  
+
   @keyframes arrow-bounce {
-    0%, 100% {
+    0%,
+    100% {
       transform: translateX(0px);
     }
     50% {
@@ -173,17 +208,17 @@ html, body {
   [data-radix-dialog-overlay] {
     background-color: rgba(0, 0, 0, 0.8) !important;
   }
-  
+
   [data-radix-dialog-content] {
     background: linear-gradient(145deg, #1a1a2e 0%, #16213e 100%) !important;
     border: 1px solid rgba(255, 255, 255, 0.1) !important;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8) !important;
   }
-  
+
   [data-radix-dialog-title] {
     color: white !important;
   }
-  
+
   [data-radix-dialog-description] {
     color: #d1d5db !important;
   }

@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
+import React, { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import {
   Home,
   Users,
@@ -12,8 +13,8 @@ import {
   Menu,
   X,
   ChevronLeft,
-  ChevronRight
-} from 'lucide-react';
+  ChevronRight,
+} from "lucide-react";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -25,15 +26,33 @@ interface SidebarProps {
 }
 
 const menuItems = [
-  { icon: Home, label: 'Dashboard', id: 'dashboard' },
-  { icon: BarChart3, label: 'Transaksi', id: 'transaksi' },
-  { icon: Package, label: 'Product', id: 'product' },
-  { icon: Users, label: 'User', id: 'user' },
+  { icon: Home, label: "Dashboard", id: "dashboard", path: "/dashboard" },
+  { icon: BarChart3, label: "Transaksi", id: "transaksi", path: "/transaksi" },
+  { icon: Package, label: "Product", id: "product", path: "/product" },
+  { icon: Users, label: "User", id: "user", path: "/user" },
 ];
 
-export function Sidebar({ isOpen, onToggle, onLogout, onCollapseChange, onMenuClick, activeMenu = 'dashboard' }: SidebarProps) {
+export function Sidebar({
+  isOpen,
+  onToggle,
+  onLogout,
+  onCollapseChange,
+  onMenuClick,
+  activeMenu,
+}: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [showText, setShowText] = useState(true);
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Determine active menu based on current path
+  const getCurrentActiveMenu = () => {
+    const path = location.pathname;
+    const menuItem = menuItems.find((item) => item.path === path);
+    return menuItem?.id || "dashboard";
+  };
+
+  const currentActiveMenu = activeMenu || getCurrentActiveMenu();
 
   // Sinkronisasi showText dengan isCollapsed saat pertama kali dimuat
   useEffect(() => {
@@ -42,7 +61,7 @@ export function Sidebar({ isOpen, onToggle, onLogout, onCollapseChange, onMenuCl
 
   const toggleCollapse = () => {
     const newCollapsed = !isCollapsed;
-    
+
     if (newCollapsed) {
       // Ketika menutup: hilangkan teks dulu, lalu tutup sidebar
       setShowText(false);
@@ -64,25 +83,33 @@ export function Sidebar({ isOpen, onToggle, onLogout, onCollapseChange, onMenuCl
     <>
       {/* Mobile overlay */}
       {isOpen && (
-        <div 
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden" 
+        <div
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
           onClick={onToggle}
         />
       )}
-      
+
       {/* Sidebar */}
-      <div className={cn(
-        "fixed left-0 top-0 z-50 h-full bg-card border-r border-border transition-all duration-500 ease-in-out lg:translate-x-0",
-        isCollapsed ? "w-16" : "w-64",
-        isOpen ? "translate-x-0" : "-translate-x-full"
-      )}>
+      <div
+        className={cn(
+          "h-full bg-card border-r border-border transition-all duration-500 ease-in-out",
+          "lg:relative lg:translate-x-0",
+          "fixed left-0 top-0 z-50 lg:z-auto",
+          isCollapsed ? "w-16" : "w-64",
+          isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        )}
+      >
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-border">
           {!isCollapsed && (
-            <h2 className={cn(
-              "text-lg font-semibold text-foreground transition-opacity duration-200 ease-in-out",
-              showText ? "opacity-100" : "opacity-0"
-            )}>Top Up Games</h2>
+            <h2
+              className={cn(
+                "text-lg font-semibold text-foreground transition-opacity duration-200 ease-in-out",
+                showText ? "opacity-100" : "opacity-0"
+              )}
+            >
+              Top Up Games
+            </h2>
           )}
           <div className="flex items-center gap-2">
             {/* Desktop collapse toggle */}
@@ -92,7 +119,11 @@ export function Sidebar({ isOpen, onToggle, onLogout, onCollapseChange, onMenuCl
               onClick={toggleCollapse}
               className="hidden lg:flex"
             >
-              {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+              {isCollapsed ? (
+                <ChevronRight className="h-4 w-4" />
+              ) : (
+                <ChevronLeft className="h-4 w-4" />
+              )}
             </Button>
             {/* Mobile close button */}
             <Button
@@ -117,20 +148,33 @@ export function Sidebar({ isOpen, onToggle, onLogout, onCollapseChange, onMenuCl
                     variant="ghost"
                     className={cn(
                       "w-full hover:bg-accent hover:text-accent-foreground",
-                      isCollapsed ? "justify-center px-2" : "justify-start text-left",
-                      activeMenu === item.id && "bg-accent text-accent-foreground"
+                      isCollapsed
+                        ? "justify-center px-2"
+                        : "justify-start text-left",
+                      currentActiveMenu === item.id &&
+                        "bg-accent text-accent-foreground"
                     )}
                     onClick={() => {
+                      navigate(item.path);
                       onMenuClick?.(item.id);
                     }}
                     title={isCollapsed ? item.label : undefined}
                   >
-                    <Icon className={cn("h-4 w-4 transition-all duration-300 ease-in-out", !isCollapsed && "mr-3")} />
+                    <Icon
+                      className={cn(
+                        "h-4 w-4 transition-all duration-300 ease-in-out",
+                        !isCollapsed && "mr-3"
+                      )}
+                    />
                     {!isCollapsed && (
-                      <span className={cn(
-                        "transition-opacity duration-200 ease-in-out",
-                        showText ? "opacity-100" : "opacity-0"
-                      )}>{item.label}</span>
+                      <span
+                        className={cn(
+                          "transition-opacity duration-200 ease-in-out",
+                          showText ? "opacity-100" : "opacity-0"
+                        )}
+                      >
+                        {item.label}
+                      </span>
                     )}
                   </Button>
                 </li>
@@ -150,12 +194,21 @@ export function Sidebar({ isOpen, onToggle, onLogout, onCollapseChange, onMenuCl
             onClick={onLogout}
             title={isCollapsed ? "Keluar" : undefined}
           >
-            <LogOut className={cn("h-4 w-4 transition-all duration-300 ease-in-out", !isCollapsed && "mr-3")} />
+            <LogOut
+              className={cn(
+                "h-4 w-4 transition-all duration-300 ease-in-out",
+                !isCollapsed && "mr-3"
+              )}
+            />
             {!isCollapsed && (
-              <span className={cn(
-                "transition-opacity duration-200 ease-in-out",
-                showText ? "opacity-100" : "opacity-0"
-              )}>Keluar</span>
+              <span
+                className={cn(
+                  "transition-opacity duration-200 ease-in-out",
+                  showText ? "opacity-100" : "opacity-0"
+                )}
+              >
+                Keluar
+              </span>
             )}
           </Button>
         </div>

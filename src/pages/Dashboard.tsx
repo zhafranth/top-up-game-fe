@@ -278,8 +278,10 @@ export function Dashboard({ onLogout }: DashboardProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [activeMenu, setActiveMenu] = useState('dashboard');
-  const [transactionDateRange, setTransactionDateRange] = useState<DateRange | undefined>();
-  const [productDateRange, setProductDateRange] = useState<DateRange | undefined>();
+  const [transactionStartDate, setTransactionStartDate] = useState<Date | undefined>();
+  const [transactionEndDate, setTransactionEndDate] = useState<Date | undefined>();
+  const [productStartDate, setProductStartDate] = useState<Date | undefined>();
+  const [productEndDate, setProductEndDate] = useState<Date | undefined>();
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
@@ -380,21 +382,19 @@ export function Dashboard({ onLogout }: DashboardProps) {
   };
 
   const filterProductsByDate = (data: any[]) => {
-    if (!productDateRange?.from && !productDateRange?.to) {
+    if (!productStartDate && !productEndDate) {
       return data;
     }
     
     return data.filter(product => {
       const productDate = new Date(product.createdDate);
-      const startDate = productDateRange?.from;
-      const endDate = productDateRange?.to;
       
-      if (startDate && endDate) {
-        return productDate >= startDate && productDate <= endDate;
-      } else if (startDate) {
-        return productDate >= startDate;
-      } else if (endDate) {
-        return productDate <= endDate;
+      if (productStartDate && productEndDate) {
+        return productDate >= productStartDate && productDate <= productEndDate;
+      } else if (productStartDate) {
+        return productDate >= productStartDate;
+      } else if (productEndDate) {
+        return productDate <= productEndDate;
       }
       return true;
     });
@@ -420,25 +420,33 @@ export function Dashboard({ onLogout }: DashboardProps) {
         </div>
 
         {/* Date Filter */}
-        <Card className="gaming-card mb-6">
-          <div className="p-4">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <Filter className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm font-medium text-foreground">Filter Tanggal Dibuat:</span>
-              </div>
-              <div className="flex items-center gap-2">
+        <Card className="mb-6 gaming-card">
+          <div className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="md:col-span-2">
+                <label className="text-sm font-medium text-foreground mb-2 block">
+                  <Filter className="h-4 w-4 inline mr-2" />
+                  Filter Tanggal Dibuat
+                </label>
                 <DateRangePicker
-                  date={productDateRange}
-                  onDateChange={setProductDateRange}
-                  placeholder="Pilih rentang tanggal produk"
-                />
+                   startDate={productStartDate}
+                   endDate={productEndDate}
+                   onStartDateChange={setProductStartDate}
+                   onEndDateChange={setProductEndDate}
+                   startPlaceholder="Tanggal mulai"
+                   endPlaceholder="Tanggal akhir"
+                 />
+              </div>
+              <div className="flex items-end">
                 <Button 
                   variant="outline" 
-                  size="sm"
-                  onClick={() => setProductDateRange(undefined)}
+                  className="w-full"
+                  onClick={() => {
+                    setProductStartDate(undefined);
+                    setProductEndDate(undefined);
+                  }}
                 >
-                  Reset
+                  Reset Filter
                 </Button>
               </div>
             </div>
@@ -506,21 +514,19 @@ export function Dashboard({ onLogout }: DashboardProps) {
   };
 
   const filterTransactionsByDate = (data: any[]) => {
-    if (!transactionDateRange?.from && !transactionDateRange?.to) {
+    if (!transactionStartDate && !transactionEndDate) {
       return data;
     }
     
     return data.filter(transaction => {
       const transactionDate = new Date(transaction.date.split(' ')[0]);
-      const startDate = transactionDateRange?.from;
-      const endDate = transactionDateRange?.to;
       
-      if (startDate && endDate) {
-        return transactionDate >= startDate && transactionDate <= endDate;
-      } else if (startDate) {
-        return transactionDate >= startDate;
-      } else if (endDate) {
-        return transactionDate <= endDate;
+      if (transactionStartDate && transactionEndDate) {
+        return transactionDate >= transactionStartDate && transactionDate <= transactionEndDate;
+      } else if (transactionStartDate) {
+        return transactionDate >= transactionStartDate;
+      } else if (transactionEndDate) {
+        return transactionDate <= transactionEndDate;
       }
       return true;
     });
@@ -546,7 +552,7 @@ export function Dashboard({ onLogout }: DashboardProps) {
         </div>
 
         {/* Date Filter */}
-        <Card className="gaming-card mb-6">
+        <Card className="mb-6 gaming-card">
           <div className="p-4">
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
@@ -555,14 +561,20 @@ export function Dashboard({ onLogout }: DashboardProps) {
               </div>
               <div className="flex items-center gap-2">
                 <DateRangePicker
-                  date={transactionDateRange}
-                  onDateChange={setTransactionDateRange}
-                  placeholder="Pilih rentang tanggal transaksi"
-                />
+                   startDate={transactionStartDate}
+                   endDate={transactionEndDate}
+                   onStartDateChange={setTransactionStartDate}
+                   onEndDateChange={setTransactionEndDate}
+                   startPlaceholder="Tanggal mulai"
+                   endPlaceholder="Tanggal akhir"
+                 />
                 <Button 
                   variant="outline" 
                   size="sm"
-                  onClick={() => setTransactionDateRange(undefined)}
+                  onClick={() => {
+                    setTransactionStartDate(undefined);
+                    setTransactionEndDate(undefined);
+                  }}
                 >
                   Reset
                 </Button>
@@ -715,7 +727,7 @@ export function Dashboard({ onLogout }: DashboardProps) {
                 <rect width="100%" height="100%" fill="url(#grid)" />
                 
                 {/* Y-axis labels */}
-                <g className="text-xs fill-muted-foreground">
+                <g className="text-xs fill-current text-muted-foreground">
                   <text x="10" y="15">50M</text>
                   <text x="10" y="55">40M</text>
                   <text x="10" y="95">30M</text>
@@ -725,14 +737,22 @@ export function Dashboard({ onLogout }: DashboardProps) {
                 
                 {/* Chart area */}
                 <g transform="translate(30, 10)">
+                  {/* Chart background area */}
+                  <path
+                    d={`M 0 ${160 - (revenueData[0].revenue * 3)} ${revenueData.map((point, index) => 
+                      `L ${index * 60} ${160 - (point.revenue * 3)}`
+                    ).join(' ')} L ${(revenueData.length - 1) * 60} 160 L 0 160 Z`}
+                    fill="url(#gradient)"
+                  />
+                  
                   {/* Chart line */}
                   <path
                     d={`M 0 ${160 - (revenueData[0].revenue * 3)} ${revenueData.map((point, index) => 
                       `L ${index * 60} ${160 - (point.revenue * 3)}`
                     ).join(' ')}`}
-                    fill="url(#gradient)"
+                    fill="none"
                     stroke="#3b82f6"
-                    strokeWidth="2"
+                    strokeWidth="3"
                   />
                   
                   {/* Data points */}
@@ -750,7 +770,7 @@ export function Dashboard({ onLogout }: DashboardProps) {
                         x={index * 60}
                         y={160 - (point.revenue * 3) - 10}
                         textAnchor="middle"
-                        className="text-xs fill-foreground font-medium"
+                        className="text-xs fill-current text-foreground font-medium"
                       >
                         {point.revenue}M
                       </text>
@@ -764,7 +784,7 @@ export function Dashboard({ onLogout }: DashboardProps) {
                       x={index * 60}
                       y="185"
                       textAnchor="middle"
-                      className="text-xs fill-muted-foreground"
+                      className="text-xs fill-current text-muted-foreground"
                     >
                       {point.month}
                     </text>
@@ -774,7 +794,7 @@ export function Dashboard({ onLogout }: DashboardProps) {
                 {/* Legend */}
                 <g transform="translate(30, 200)">
                   <circle cx="0" cy="-10" r="3" fill="#3b82f6" />
-                  <text x="10" y="-6" className="text-xs fill-muted-foreground">
+                  <text x="10" y="-6" className="text-xs fill-current text-muted-foreground">
                     Pendapatan Bulanan (dalam Jutaan IDR)
                   </text>
                 </g>
