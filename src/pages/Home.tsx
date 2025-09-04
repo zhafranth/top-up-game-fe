@@ -1,5 +1,6 @@
 import { Footer } from "../components/Footer";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Lottie from "lottie-react";
 import confettiAnimation from "../assets/confetti.json";
 import GradientText from "../components/GradientText";
@@ -62,12 +63,28 @@ const topUpOptions: TopUpOption[] = [
 ];
 
 export function Home() {
+  const navigate = useNavigate();
   const [royalId, setRoyalId] = useState("");
   const [whatsappNumber, setWhatsappNumber] = useState("");
   const [selectedTopUp, setSelectedTopUp] = useState<number | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [whatsappError, setWhatsappError] = useState("");
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  const heroImages = [
+    "https://images.unsplash.com/photo-1542751371-adc38448a05e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
+    "https://images.unsplash.com/photo-1511512578047-dfb367046420?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2071&q=80",
+    "https://images.unsplash.com/photo-1493711662062-fa541adb3fc8?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
+  ];
+
+  // Auto slide effect
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % heroImages.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [heroImages.length]);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("id-ID", {
@@ -79,51 +96,54 @@ export function Home() {
 
   const validateWhatsappNumber = (number: string): boolean => {
     // Remove all non-digit characters
-    const cleanNumber = number.replace(/\D/g, '');
-    
+    const cleanNumber = number.replace(/\D/g, "");
+
     // Check if it's empty
     if (!cleanNumber) {
       setWhatsappError("Nomor WhatsApp tidak boleh kosong");
       return false;
     }
-    
+
     // Check minimum length (at least 10 digits)
     if (cleanNumber.length < 10) {
       setWhatsappError("Nomor WhatsApp minimal 10 digit");
       return false;
     }
-    
+
     // Check maximum length (max 15 digits)
     if (cleanNumber.length > 15) {
       setWhatsappError("Nomor WhatsApp maksimal 15 digit");
       return false;
     }
-    
+
     // Check if it starts with valid Indonesian phone number patterns
-    const validPrefixes = ['08', '628', '+628'];
-    const hasValidPrefix = validPrefixes.some(prefix => {
-      if (prefix === '08') {
-        return cleanNumber.startsWith('08');
-      } else if (prefix === '628') {
-        return cleanNumber.startsWith('628');
-      }
-      return false;
-    }) || number.startsWith('+628');
-    
+    const validPrefixes = ["08", "628", "+628"];
+    const hasValidPrefix =
+      validPrefixes.some((prefix) => {
+        if (prefix === "08") {
+          return cleanNumber.startsWith("08");
+        } else if (prefix === "628") {
+          return cleanNumber.startsWith("628");
+        }
+        return false;
+      }) || number.startsWith("+628");
+
     if (!hasValidPrefix) {
-      setWhatsappError("Nomor WhatsApp harus dimulai dengan 08, +628, atau 628");
+      setWhatsappError(
+        "Nomor WhatsApp harus dimulai dengan 08, +628, atau 628"
+      );
       return false;
     }
-    
+
     setWhatsappError("");
     return true;
   };
 
   const handleWhatsappChange = (value: string) => {
     // Only allow numbers, +, and spaces for formatting
-    const sanitized = value.replace(/[^0-9+\s]/g, '');
+    const sanitized = value.replace(/[^0-9+\s]/g, "");
     setWhatsappNumber(sanitized);
-    
+
     // Validate on change
     if (sanitized.trim()) {
       validateWhatsappNumber(sanitized);
@@ -189,8 +209,41 @@ export function Home() {
 
       {/* Hero Section */}
       <div className="relative overflow-hidden">
+        {/* Background Image Slider */}
+        <div className="absolute inset-0">
+          {heroImages.map((image, index) => (
+            <div
+              key={index}
+              className={`absolute inset-0 transition-opacity duration-1000 ${
+                index === currentSlide ? "opacity-100" : "opacity-0"
+              }`}
+            >
+              <img
+                src={image}
+                alt={`Gaming background ${index + 1}`}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          ))}
+        </div>
+
+        {/* Dark overlay for better text contrast */}
+        <div className="absolute inset-0 bg-black/60"></div>
+
+        {/* Original gradient overlay */}
         <div className="absolute inset-0 wave-gradient opacity-20"></div>
-        <div className="absolute inset-0 bg-gradient-to-br from-purple-600/10 via-blue-600/10 to-pink-600/10"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-600/20 via-blue-600/20 to-pink-600/20"></div>
+
+        {/* Login Button - Top Right */}
+        <div className="absolute top-6 right-6 z-20">
+          <button
+            onClick={() => navigate("/auth")}
+            className="text-gray-300 hover:text-white font-medium px-4 py-2 rounded-lg transition-all duration-300 hover:bg-white/10 backdrop-blur-sm border border-white/20 hover:border-white/30"
+          >
+            👤 Login
+          </button>
+        </div>
+
         <div className="container mx-auto px-4 py-16 relative z-10">
           <div className="text-center mb-12">
             <div className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-500/20 to-blue-500/20 px-4 py-2 rounded-full border border-purple-500/30 mb-6">
@@ -208,7 +261,7 @@ export function Home() {
                 Top Up Games
               </GradientText>
             </h1>
-            <p className="text-muted-foreground text-xl max-w-2xl mx-auto leading-relaxed">
+            <p className="text-white text-xl max-w-2xl mx-auto leading-relaxed">
               Pilih game favoritmu dan lakukan top up dengan mudah, aman, dan
               terpercaya.
               <span className="text-purple-400 font-semibold">
@@ -242,9 +295,7 @@ export function Home() {
               1
             </div>
             <div>
-              <h2 className="text-3xl font-bold text-white">
-                Data Akun
-              </h2>
+              <h2 className="text-3xl font-bold text-white">Data Akun</h2>
               <p className="text-gray-300 text-sm mt-1">
                 Masukkan informasi akun game Anda
               </p>
@@ -275,9 +326,9 @@ export function Home() {
                 onChange={(e) => handleWhatsappChange(e.target.value)}
                 placeholder="Contoh: 08123456789 atau +628123456789"
                 className={`w-full px-4 py-3 bg-black/30 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 ${
-                  whatsappError 
-                    ? 'border-red-500 focus:border-red-400 focus:ring-red-400/20' 
-                    : 'border-purple-500/30 focus:border-purple-400 focus:ring-purple-400/20'
+                  whatsappError
+                    ? "border-red-500 focus:border-red-400 focus:ring-red-400/20"
+                    : "border-purple-500/30 focus:border-purple-400 focus:ring-purple-400/20"
                 }`}
               />
               {whatsappError && (
@@ -445,6 +496,24 @@ export function Home() {
             </Dialog>
           </div>
         )}
+      </div>
+
+      {/* Floating WhatsApp Button */}
+      <div className="fixed bottom-6 right-6 z-50">
+        <button
+          onClick={() => window.open("https://wa.me/6281234567890", "_blank")}
+          className="bg-green-500 hover:bg-green-600 text-white p-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-110"
+          title="Chat WhatsApp"
+        >
+          <svg
+            className="w-6 h-6"
+            fill="currentColor"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.488" />
+          </svg>
+        </button>
       </div>
 
       <Footer />
