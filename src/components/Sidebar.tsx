@@ -1,14 +1,12 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   Home,
   Users,
-  Settings,
   BarChart3,
   Package,
-  CreditCard,
   LogOut,
   Menu,
   X,
