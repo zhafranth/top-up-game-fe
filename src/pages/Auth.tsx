@@ -9,7 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 
 export function Auth() {
   const navigate = useNavigate();
-  const { login, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { login, isAuthenticated, isLoading } = useAuth();
   
   // Custom CSS untuk animasi gradasi bergerak
   const animatedGradientStyle = {
@@ -43,7 +43,6 @@ export function Auth() {
   
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,26 +52,11 @@ export function Auth() {
       return;
     }
 
-    setIsLoading(true);
-    
-    try {
-      const success = await login(username, password);
-      
-      if (success) {
-        toast.success('Login berhasil!');
-        navigate('/dashboard');
-      } else {
-        toast.error('Username atau password salah');
-      }
-    } catch (error) {
-      toast.error('Terjadi kesalahan saat login');
-    } finally {
-      setIsLoading(false);
-    }
+    login(username, password);
   };
 
   // Show loading if auth is still checking
-  if (authLoading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
@@ -132,7 +116,7 @@ export function Auth() {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               className="bg-white/5 border-white/10 text-white placeholder:text-gray-400 focus:border-white/30 focus:bg-white/10 transition-all duration-200 backdrop-blur-sm"
-              disabled={isLoading || authLoading}
+              disabled={isLoading}
             />
           </div>
           
@@ -147,14 +131,14 @@ export function Auth() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="bg-white/5 border-white/10 text-white placeholder:text-gray-400 focus:border-white/30 focus:bg-white/10 transition-all duration-200 backdrop-blur-sm"
-              disabled={isLoading || authLoading}
+              disabled={isLoading}
             />
           </div>
           
           <Button
             type="submit"
             className="w-full bg-gradient-to-r from-purple-600/80 to-blue-600/80 hover:from-purple-600 hover:to-blue-600 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200 backdrop-blur-sm border border-white/10 shadow-lg hover:shadow-xl hover:scale-[1.02]"
-            disabled={isLoading || authLoading}
+            disabled={isLoading}
           >
             {isLoading ? 'Memproses...' : 'Login'}
           </Button>

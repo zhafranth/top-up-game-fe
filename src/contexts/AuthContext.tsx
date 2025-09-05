@@ -1,80 +1,42 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext } from 'react';
+import { useLogin, useLogout, useAuthStatus } from '../hooks/useAuth';
 
 interface User {
   id: string;
   username: string;
   email: string;
+  name: string;
 }
 
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
-  login: (username: string, password: string) => Promise<boolean>;
+  login: (username: string, password: string) => void;
   logout: () => void;
   isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Dummy user data untuk testing
-const DUMMY_USER = {
-  id: '1',
-  username: 'admin',
-  email: 'admin@topupgames.com'
-};
-
-const DUMMY_CREDENTIALS = {
-  username: 'admin',
-  password: 'admin123'
-};
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const loginMutation = useLogin();
+  const logoutMutation = useLogout();
+  const { isAuthenticated, user } = useAuthStatus();
 
-  // Check if user is already logged in on app start
-  useEffect(() => {
-    const savedUser = localStorage.getItem('user');
-    if (savedUser) {
-      try {
-        setUser(JSON.parse(savedUser));
-      } catch (error) {
-        console.error('Error parsing saved user:', error);
-        localStorage.removeItem('user');
-      }
-    }
-    setIsLoading(false);
-  }, []);
-
-  const login = async (username: string, password: string): Promise<boolean> => {
-    setIsLoading(true);
-    
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Check dummy credentials
-    if (username === DUMMY_CREDENTIALS.username && password === DUMMY_CREDENTIALS.password) {
-      setUser(DUMMY_USER);
-      localStorage.setItem('user', JSON.stringify(DUMMY_USER));
-      setIsLoading(false);
-      return true;
-    }
-    
-    setIsLoading(false);
-    return false;
+  const login = (username: string, password: string) => {
+    loginMutation.mutate({ username, password });
   };
 
   const logout = () => {
-    setUser(null);
-    localStorage.removeItem('user');
+    logoutMutation.mutate();
   };
 
   const value = {
     user,
-    isAuthenticated: !!user,
+    isAuthenticated,
     login,
     logout,
-    isLoading
+    isLoading: loginMutation.isPending || logoutMutation.isPending
   };
 
   return (
