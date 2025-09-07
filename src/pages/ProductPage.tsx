@@ -5,86 +5,67 @@ import { Input } from "@/components/ui/input";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { DataTable, Column } from "@/components/DataTable";
 import { Edit, Trash2, Plus, Filter, Search } from "lucide-react";
+import { useProducts } from "../hooks/useProducts";
+import { Product } from "../types/product";
+import { CreateProductModal } from "../components/CreateProductModal";
+import { DeleteProductModal } from "../components/DeleteProductModal";
+import { UpdateProductModal } from "../components/UpdateProductModal";
 
-// Data dummy untuk Product
-const productsData = [
-  {
-    id: 1,
-    name: "Mobile Legends Diamond",
-    price: 15000,
-    discountPrice: 2000,
-    totalDiamond: 500,
-  },
-  {
-    id: 2,
-    name: "Free Fire Diamond",
-    price: 10000,
-    discountPrice: 1500,
-    totalDiamond: 250,
-  },
-  {
-    id: 3,
-    name: "PUBG Mobile UC",
-    price: 20000,
-    discountPrice: 3000,
-    totalDiamond: 1000,
-  },
-  {
-    id: 4,
-    name: "Genshin Impact Genesis Crystal",
-    price: 25000,
-    discountPrice: 5000,
-    totalDiamond: 750,
-  },
-  {
-    id: 5,
-    name: "Valorant Points",
-    price: 12000,
-    discountPrice: 1800,
-    totalDiamond: 300,
-  },
-  {
-    id: 6,
-    name: "Clash of Clans Gems",
-    price: 8000,
-    discountPrice: 1200,
-    totalDiamond: 200,
-  },
-];
+
 
 export function ProductPage() {
   const [startDate, setStartDate] = useState<Date | undefined>();
   const [endDate, setEndDate] = useState<Date | undefined>();
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(10);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [productToDelete, setProductToDelete] = useState<Product | null>(null);
+  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
+  const [productToUpdate, setProductToUpdate] = useState<Product | null>(null);
+  
+  // Fetch products from API
+  const { data: productsResponse, isLoading, error } = useProducts({ 
+    page: currentPage, 
+    limit: pageSize,
+    search: searchTerm || undefined
+  });
 
-  const filterProductsByDate = (products: typeof productsData) => {
-    // Since we removed date fields, return all products
-    return products;
-  };
-
-  const filterProductsBySearch = (products: typeof productsData) => {
-    if (!searchTerm) {
+  const filterProductsByDate = (products: Product[]) => {
+    if (!startDate && !endDate) {
       return products;
     }
 
-    return products.filter((product) =>
-      product.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    return products.filter((product) => {
+      const productDate = new Date(product.created_at);
+
+      if (startDate && endDate) {
+        return productDate >= startDate && productDate <= endDate;
+      } else if (startDate) {
+        return productDate >= startDate;
+      } else if (endDate) {
+        return productDate <= endDate;
+      }
+      return true;
+    });
   };
 
-  const filterProductsByCategory = (products: typeof productsData) => {
-    // Since we removed category field, return all products
-    return products;
+  // Filter products locally by date (search is handled by API)
+  const filteredProducts = productsResponse?.products ? filterProductsByDate(productsResponse.products) : [];
+
+  const handleDeleteProduct = (product: Product) => {
+    setProductToDelete(product);
+    setIsDeleteModalOpen(true);
   };
 
-  const filteredProducts = filterProductsByCategory(
-    filterProductsBySearch(filterProductsByDate(productsData))
-  );
+  const handleUpdateProduct = (product: Product) => {
+    setProductToUpdate(product);
+    setIsUpdateModalOpen(true);
+  };
 
-  const categories: string[] = []; // No categories in new structure
-
-  const productColumns: Column<(typeof productsData)[0]>[] = [
+  const productColumns: Column<Product>[] = [
     {
       key: "id",
       header: "ID",
@@ -105,16 +86,16 @@ export function ProductPage() {
       ),
     },
     {
-      key: "discountPrice",
-      header: "Diskon Price",
+      key: "discount",
+      header: "Discount (%)",
       render: (value) => (
         <span className="font-medium text-red-500">
-          Rp {value?.toLocaleString("id-ID")}
+          {value}%
         </span>
       ),
     },
     {
-      key: "totalDiamond",
+      key: "total_diamond",
       header: "Total Diamond",
       render: (value) => (
         <span className="font-medium text-blue-500">
@@ -123,14 +104,35 @@ export function ProductPage() {
       ),
     },
     {
+      key: "is_populer",
+      header: "Popular",
+      render: (value) => (
+        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+          value ? 'bg-yellow-500/20 text-yellow-500' : 'bg-gray-500/20 text-gray-500'
+        }`}>
+          {value ? 'Ya' : 'Tidak'}
+        </span>
+      ),
+    },
+    {
+      key: "created_at",
+      header: "Tanggal Dibuat",
+      render: (value) => (
+        <span className="text-muted-foreground">
+          {new Date(value as string).toLocaleDateString('id-ID')}
+        </span>
+      ),
+    },
+    {
       key: "actions",
       header: "Action",
-      render: () => (
+      render: (_, product) => (
         <div className="flex items-center gap-2">
           <Button
             variant="ghost"
             size="sm"
             className="h-8 w-8 p-0 text-blue-500 hover:text-blue-600"
+            onClick={() => handleUpdateProduct(product)}
           >
             <Edit className="h-4 w-4" />
           </Button>
@@ -138,6 +140,7 @@ export function ProductPage() {
             variant="ghost"
             size="sm"
             className="h-8 w-8 p-0 text-red-500 hover:text-red-600"
+            onClick={() => handleDeleteProduct(product)}
           >
             <Trash2 className="h-4 w-4" />
           </Button>
@@ -159,7 +162,10 @@ export function ProductPage() {
               Kelola produk game dan layanan top-up Anda.
             </p>
           </div>
-          <Button className="bg-primary hover:bg-primary/90">
+          <Button 
+            className="bg-primary hover:bg-primary/90"
+            onClick={() => setIsCreateModalOpen(true)}
+          >
             <Plus className="h-4 w-4 mr-2" />
             Tambah Product
           </Button>
@@ -184,23 +190,20 @@ export function ProductPage() {
               />
             </div>
 
-            {/* Category Filter */}
+            {/* Popular Filter */}
             <div>
               <label className="text-sm font-medium text-foreground mb-2 block">
                 <Filter className="h-4 w-4 inline mr-2" />
-                Kategori
+                Filter Popular
               </label>
               <select
                 value={categoryFilter}
                 onChange={(e) => setCategoryFilter(e.target.value)}
                 className="w-full h-10 px-3 py-2 border border-input bg-background rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
               >
-                <option value="">Semua Kategori</option>
-                {categories.map((category) => (
-                  <option key={category} value={category}>
-                    {category}
-                  </option>
-                ))}
+                <option value="">Semua Product</option>
+                <option value="popular">Hanya Popular</option>
+                <option value="not-popular">Tidak Popular</option>
               </select>
             </div>
 
@@ -242,12 +245,47 @@ export function ProductPage() {
       </Card>
 
       {/* Products Table */}
-      <DataTable
-        columns={productColumns}
-        data={filteredProducts}
-        title="Daftar Product"
-        totalCount={productsData.length}
-        emptyMessage="Tidak ada product yang ditemukan."
+      {isLoading ? (
+        <Card className="p-8">
+          <div className="flex justify-center items-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <span className="ml-2 text-muted-foreground">Memuat data produk...</span>
+          </div>
+        </Card>
+      ) : error ? (
+        <Card className="p-8">
+          <div className="text-center text-red-500">
+            <p>Gagal memuat data produk. Silakan coba lagi.</p>
+          </div>
+        </Card>
+      ) : (
+        <DataTable
+          columns={productColumns}
+          data={filteredProducts}
+          title="Daftar Product"
+          totalCount={productsResponse?.pagination?.total || 0}
+          emptyMessage="Tidak ada product yang ditemukan."
+        />
+      )}
+      
+      {/* Create Product Modal */}
+      <CreateProductModal 
+        open={isCreateModalOpen}
+        onOpenChange={setIsCreateModalOpen}
+      />
+      
+      {/* Delete Product Modal */}
+      <DeleteProductModal 
+        open={isDeleteModalOpen}
+        onOpenChange={setIsDeleteModalOpen}
+        product={productToDelete}
+      />
+      
+      {/* Update Product Modal */}
+      <UpdateProductModal 
+        open={isUpdateModalOpen}
+        onOpenChange={setIsUpdateModalOpen}
+        product={productToUpdate}
       />
     </>
   );

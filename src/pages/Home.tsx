@@ -13,54 +13,11 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "../components/ui/dialog";
+import { useProducts } from "../hooks/useProducts";
+import { Product } from "../types/product";
+import { ProductCardSkeleton } from "../components/ProductCardSkeleton";
 
-interface TopUpOption {
-  id: number;
-  price: number;
-  originalPrice: number;
-  diamonds: number;
-  discount?: number;
-  isPopular?: boolean;
-}
 
-const topUpOptions: TopUpOption[] = [
-  { id: 1, price: 10000, originalPrice: 10000, diamonds: 20 },
-  { id: 2, price: 22500, originalPrice: 25000, diamonds: 50, discount: 10 },
-  {
-    id: 3,
-    price: 42500,
-    originalPrice: 50000,
-    diamonds: 100,
-    discount: 15,
-    isPopular: true,
-  },
-  { id: 4, price: 85000, originalPrice: 100000, diamonds: 200, discount: 15 },
-  { id: 5, price: 127500, originalPrice: 150000, diamonds: 300, discount: 15 },
-  { id: 6, price: 200000, originalPrice: 250000, diamonds: 500, discount: 20 },
-  {
-    id: 7,
-    price: 400000,
-    originalPrice: 500000,
-    diamonds: 1000,
-    discount: 20,
-    isPopular: true,
-  },
-  { id: 8, price: 600000, originalPrice: 750000, diamonds: 1500, discount: 20 },
-  {
-    id: 9,
-    price: 750000,
-    originalPrice: 1000000,
-    diamonds: 2000,
-    discount: 25,
-  },
-  {
-    id: 10,
-    price: 1200000,
-    originalPrice: 1500000,
-    diamonds: 3000,
-    discount: 20,
-  },
-];
 
 export function Home() {
   const navigate = useNavigate();
@@ -71,6 +28,9 @@ export function Home() {
   const [showConfetti, setShowConfetti] = useState(false);
   const [whatsappError, setWhatsappError] = useState("");
   const [currentSlide, setCurrentSlide] = useState(0);
+  
+  // Fetch products from API
+  const { data: productsResponse, isLoading, error } = useProducts({ limit: 20 });
 
   const heroImages = [
     "https://images.unsplash.com/photo-1542751371-adc38448a05e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
@@ -91,6 +51,15 @@ export function Home() {
       style: "currency",
       currency: "IDR",
       minimumFractionDigits: 0,
+    }).format(price);
+  };
+
+  const formatPriceNoDecimal = (price: number) => {
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
     }).format(price);
   };
 
@@ -152,8 +121,8 @@ export function Home() {
     }
   };
 
-  const handleTopUpSelect = (optionId: number) => {
-    setSelectedTopUp(optionId);
+  const handleTopUpSelect = (productId: number) => {
+    setSelectedTopUp(productId);
   };
 
   const handleSubmit = () => {
@@ -166,8 +135,8 @@ export function Home() {
       return;
     }
 
-    const selectedOption = topUpOptions.find(
-      (option) => option.id === selectedTopUp
+    const selectedOption = productsResponse?.products?.find(
+      (product: Product) => product.id === selectedTopUp
     );
     console.log("Top up data:", {
       royalId,
@@ -357,56 +326,71 @@ export function Home() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-8">
-            {topUpOptions.map((option) => (
-              <div key={option.id} className="relative">
-                {" "}
-                {option.isPopular && (
-                  <div className="absolute -top-0 -right-1 bg-gradient-to-r from-yellow-400 to-orange-400 text-black text-xs font-bold px-2 py-1 rounded-full z-30 shadow-lg">
-                    POPULER
-                  </div>
-                )}
-                <div
-                  onClick={() => handleTopUpSelect(option.id)}
-                  className={`relative overflow-hidden cursor-pointer p-4 rounded-xl border-2 transition-all duration-300 hover:scale-105 ${
-                    selectedTopUp === option.id
-                      ? "border-purple-400 bg-purple-500/20 shadow-lg shadow-purple-500/25"
-                      : "border-gray-600/50 bg-black/20 hover:border-purple-500/50"
-                  } ${option.isPopular ? "ring-2 ring-yellow-400/50" : ""}`}
-                  style={{ marginTop: option.isPopular ? "8px" : "0" }}
-                >
-                  {/* Flayer Diskon Segitiga di Pojok Kiri Atas */}
-                  {option.discount && (
-                    <div className="absolute top-0 left-0 w-0 h-0 border-l-[65px] border-l-red-500 border-b-[65px] border-b-transparent z-20">
-                      <span className="absolute top-[20px] -left-[60px] text-white text-[14px] font-bold transform rotate-[-45deg] w-[30px] text-center leading-tight">
-                        -{option.discount}%
-                      </span>
-                    </div>
-                  )}
-
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-white mb-1">
-                      {option.diamonds} 💎
-                    </div>
-                    {option.discount ? (
-                      <div>
-                        <div className="text-sm text-gray-400 line-through mb-1">
-                          {formatPrice(option.originalPrice)}
-                        </div>
-                        <div className="text-lg font-semibold text-purple-300">
-                          {formatPrice(option.price)}
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="text-lg font-semibold text-purple-300">
-                        {formatPrice(option.price)}
+          {isLoading ? (
+            <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-8">
+              <ProductCardSkeleton count={8} />
+            </div>
+          ) : error ? (
+            <div className="text-center py-12">
+              <p className="text-red-400">Gagal memuat produk. Silakan coba lagi.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-8">
+              {productsResponse?.products?.map((product: Product) => {
+                const originalPrice = product.discount > 0 ? product.price / (1 - product.discount / 100) : null;
+                return (
+                  <div key={product.id} className="relative">
+                    {product.is_populer && (
+                      <div className="absolute -top-0 -right-1 bg-gradient-to-r from-yellow-400 to-orange-400 text-black text-xs font-bold px-2 py-1 rounded-full z-30 shadow-lg">
+                        POPULER
                       </div>
                     )}
+                    <div
+                      onClick={() => handleTopUpSelect(product.id)}
+                      className={`relative overflow-hidden cursor-pointer p-4 rounded-xl border-2 transition-all duration-300 hover:scale-105 ${
+                        selectedTopUp === product.id
+                          ? "border-purple-400 bg-purple-500/20 shadow-lg shadow-purple-500/25"
+                          : "border-gray-600/50 bg-black/20 hover:border-purple-500/50"
+                      } ${product.is_populer ? "ring-2 ring-yellow-400/50" : ""}`}
+                      style={{ marginTop: product.is_populer ? "8px" : "0" }}
+                    >
+                      {/* Flayer Diskon Segitiga di Pojok Kiri Atas */}
+                      {product.discount > 0 && (
+                        <div className="absolute top-0 left-0 w-0 h-0 border-l-[65px] border-l-red-500 border-b-[65px] border-b-transparent z-20">
+                          <span className="absolute top-[20px] -left-[60px] text-white text-[14px] font-bold transform rotate-[-45deg] w-[30px] text-center leading-tight">
+                            -{product.discount}%
+                          </span>
+                        </div>
+                      )}
+
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-white mb-1">
+                          {product.total_diamond} 💎
+                        </div>
+                        <div className="text-sm text-gray-300 mb-2">
+                          {product.name}
+                        </div>
+                        {product.discount > 0 && originalPrice ? (
+                          <div>
+                            <div className="text-sm text-gray-400 line-through mb-1">
+                              {formatPriceNoDecimal(originalPrice)}
+                            </div>
+                            <div className="text-lg font-semibold text-purple-300">
+                              {formatPrice(product.price)}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="text-lg font-semibold text-purple-300">
+                            {formatPrice(product.price)}
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-            ))}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Button Lanjutkan Pembayaran - Hanya muncul jika data lengkap */}
@@ -443,37 +427,37 @@ export function Home() {
                     <div className="flex justify-between">
                       <span className="font-medium">Paket:</span>
                       <span>
-                        {
-                          topUpOptions.find(
-                            (option) => option.id === selectedTopUp
-                          )?.diamonds
+                        {productsResponse?.products?.find(
+                          (product: Product) => product.id === selectedTopUp
+                        )?.total_diamond
                         }{" "}
-                        💎
-                      </span>
+                      💎
+                    </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="font-medium">Harga:</span>
                       <span className="font-bold text-green-600">
                         {formatPrice(
-                          topUpOptions.find(
-                            (option) => option.id === selectedTopUp
+                          productsResponse?.products?.find(
+                            (product: Product) => product.id === selectedTopUp
                           )?.price || 0
                         )}
                       </span>
                     </div>
-                    {topUpOptions.find((option) => option.id === selectedTopUp)
-                      ?.discount && (
-                      <div className="flex justify-between text-sm text-gray-400">
-                        <span>Harga Normal:</span>
-                        <span className="line-through">
-                          {formatPrice(
-                            topUpOptions.find(
-                              (option) => option.id === selectedTopUp
-                            )?.originalPrice || 0
-                          )}
-                        </span>
-                      </div>
-                    )}
+                    {(() => {
+                       const selectedProduct = productsResponse?.products?.find(
+                         (product: Product) => product.id === selectedTopUp
+                       );
+                       const originalPrice = selectedProduct && selectedProduct.discount > 0 ? selectedProduct.price / (1 - selectedProduct.discount / 100) : null;
+                       return originalPrice ? (
+                         <div className="flex justify-between text-sm text-gray-400">
+                           <span>Harga Normal:</span>
+                           <span className="line-through">
+                             {formatPriceNoDecimal(originalPrice)}
+                           </span>
+                         </div>
+                       ) : null;
+                     })()}
                   </div>
                 </div>
                 <DialogFooter>
