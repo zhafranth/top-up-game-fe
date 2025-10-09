@@ -11,26 +11,28 @@ import { CreateProductModal } from "../components/CreateProductModal";
 import { DeleteProductModal } from "../components/DeleteProductModal";
 import { UpdateProductModal } from "../components/UpdateProductModal";
 
-
-
 export function ProductPage() {
   const [startDate, setStartDate] = useState<Date | undefined>();
   const [endDate, setEndDate] = useState<Date | undefined>();
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage] = useState(1);
   const [pageSize] = useState(10);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const [productToUpdate, setProductToUpdate] = useState<Product | null>(null);
-  
+
   // Fetch products from API
-  const { data: productsResponse, isLoading, error } = useProducts({ 
-    page: currentPage, 
+  const {
+    data: productsResponse,
+    isLoading,
+    error,
+  } = useProducts({
+    page: currentPage,
     limit: pageSize,
-    search: searchTerm || undefined
+    search: searchTerm || undefined,
   });
 
   const filterProductsByDate = (products: Product[]) => {
@@ -53,7 +55,9 @@ export function ProductPage() {
   };
 
   // Filter products locally by date (search is handled by API)
-  const filteredProducts = productsResponse?.products ? filterProductsByDate(productsResponse.products) : [];
+  const filteredProducts = productsResponse?.products
+    ? filterProductsByDate(productsResponse.products)
+    : [];
 
   const handleDeleteProduct = (product: Product) => {
     setProductToDelete(product);
@@ -89,9 +93,7 @@ export function ProductPage() {
       key: "discount",
       header: "Discount (%)",
       render: (value) => (
-        <span className="font-medium text-red-500">
-          {value}%
-        </span>
+        <span className="font-medium text-red-500">{value}%</span>
       ),
     },
     {
@@ -107,10 +109,14 @@ export function ProductPage() {
       key: "is_populer",
       header: "Popular",
       render: (value) => (
-        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-          value ? 'bg-yellow-500/20 text-yellow-500' : 'bg-gray-500/20 text-gray-500'
-        }`}>
-          {value ? 'Ya' : 'Tidak'}
+        <span
+          className={`px-2 py-1 rounded-full text-xs font-medium ${
+            value
+              ? "bg-yellow-500/20 text-yellow-500"
+              : "bg-gray-500/20 text-gray-500"
+          }`}
+        >
+          {value ? "Ya" : "Tidak"}
         </span>
       ),
     },
@@ -119,7 +125,7 @@ export function ProductPage() {
       header: "Tanggal Dibuat",
       render: (value) => (
         <span className="text-muted-foreground">
-          {new Date(value as string).toLocaleDateString('id-ID')}
+          {new Date(value as string).toLocaleDateString("id-ID")}
         </span>
       ),
     },
@@ -162,7 +168,7 @@ export function ProductPage() {
               Kelola produk game dan layanan top-up Anda.
             </p>
           </div>
-          <Button 
+          <Button
             className="bg-primary hover:bg-primary/90"
             onClick={() => setIsCreateModalOpen(true)}
           >
@@ -249,7 +255,9 @@ export function ProductPage() {
         <Card className="p-8">
           <div className="flex justify-center items-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-            <span className="ml-2 text-muted-foreground">Memuat data produk...</span>
+            <span className="ml-2 text-muted-foreground">
+              Memuat data produk...
+            </span>
           </div>
         </Card>
       ) : error ? (
@@ -267,22 +275,22 @@ export function ProductPage() {
           emptyMessage="Tidak ada product yang ditemukan."
         />
       )}
-      
+
       {/* Create Product Modal */}
-      <CreateProductModal 
+      <CreateProductModal
         open={isCreateModalOpen}
         onOpenChange={setIsCreateModalOpen}
       />
-      
+
       {/* Delete Product Modal */}
-      <DeleteProductModal 
+      <DeleteProductModal
         open={isDeleteModalOpen}
         onOpenChange={setIsDeleteModalOpen}
         product={productToDelete}
       />
-      
+
       {/* Update Product Modal */}
-      <UpdateProductModal 
+      <UpdateProductModal
         open={isUpdateModalOpen}
         onOpenChange={setIsUpdateModalOpen}
         product={productToUpdate}
