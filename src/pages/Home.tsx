@@ -16,6 +16,8 @@ import {
 import { useProducts } from "../hooks/useProducts";
 import { Product } from "../types/product";
 import { ProductCardSkeleton } from "../components/ProductCardSkeleton";
+import { transactionService } from "../services/transaction";
+import { QRCodeCanvas } from "qrcode.react";
 
 
 
@@ -29,6 +31,96 @@ export function Home() {
   const [whatsappError, setWhatsappError] = useState("");
   const [currentSlide, setCurrentSlide] = useState(0);
   
+  // Tambahan state untuk alur pembayaran QRIS
+  const [paymentStep, setPaymentStep] = useState<'confirm' | 'qris'>('confirm');
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
+  const [qrisData, setQrisData] = useState<{
+    qrUrl?: string;
+    qrString?: string;
+    redirectUrl?: string;
+    referenceId?: string;
+  } | null>(null);
+  const [createdTransactionId, setCreatedTransactionId] = useState<number | null>(null);
+  // Status pembayaran (untuk indikator pada modal)
+  const [paymentStatus, setPaymentStatus] = useState<'idle' | 'pending' | 'success' | 'failed'>('idle');
+  const [backendStatus, setBackendStatus] = useState<string | null>(null);
+
+  // Reset state ketika dialog dibuka ulang
+  useEffect(() => {
+    if (isDialogOpen) {
+      setPaymentStep('confirm');
+      setPaymentError(null);
+      setIsProcessingPayment(false);
+      setPaymentStatus('idle');
+      setBackendStatus(null);
+    }
+  }, [isDialogOpen]);
+
+  // Polling status transaksi ketika sudah di step QRIS
+  useEffect(() => {
+    let intervalId: any;
+
+    const isSuccess = (s: string) => {
+      const x = s.toLowerCase();
+      return (
+        x.includes('paid') ||
+        x.includes('success') ||
+        x.includes('settlement') ||
+        x.includes('completed') ||
+        x.includes('captured')
+      );
+    };
+
+    const isFailed = (s: string) => {
+      const x = s.toLowerCase();
+      return (
+        x.includes('failed') ||
+        x.includes('cancel') ||
+        x.includes('expired') ||
+        x.includes('void')
+      );
+    };
+
+    const checkStatus = async () => {
+      if (!createdTransactionId) return;
+      try {
+        const trx = await transactionService.getTransaction(createdTransactionId);
+        const s = String(trx.status ?? '');
+        setBackendStatus(s);
+        if (s) {
+          if (isSuccess(s)) {
+            setPaymentStatus('success');
+            setShowConfetti(true);
+            // Stop polling on success
+            if (intervalId) clearInterval(intervalId);
+            // Hide confetti after a while
+            setTimeout(() => setShowConfetti(false), 3500);
+          } else if (isFailed(s)) {
+            setPaymentStatus('failed');
+            // Stop polling on terminal failure
+            if (intervalId) clearInterval(intervalId);
+          } else {
+            setPaymentStatus('pending');
+          }
+        }
+      } catch (err) {
+        // Keep silent retry, do not spam UI
+      }
+    };
+
+    if (isDialogOpen && paymentStep === 'qris' && createdTransactionId) {
+      // Immediately check once and then poll
+      setPaymentStatus((prev) => (prev === 'success' ? prev : 'pending'));
+      checkStatus();
+      intervalId = setInterval(checkStatus, 3000);
+    }
+
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [isDialogOpen, paymentStep, createdTransactionId]);
+
   // Fetch products from API
   const { data: productsResponse, isLoading, error } = useProducts({ limit: 20 });
 
@@ -125,38 +217,67 @@ export function Home() {
     setSelectedTopUp(productId);
   };
 
-  const handleSubmit = () => {
-    if (!royalId || !whatsappNumber || !selectedTopUp) {
-      return;
-    }
+  const handleSubmit = async () => {
+    if (!royalId || !whatsappNumber || !selectedTopUp) return;
+    if (!validateWhatsappNumber(whatsappNumber)) return;
 
-    // Validate WhatsApp number before submitting
-    if (!validateWhatsappNumber(whatsappNumber)) {
-      return;
-    }
-
-    const selectedOption = productsResponse?.products?.find(
+    const selectedProduct = productsResponse?.products?.find(
       (product: Product) => product.id === selectedTopUp
     );
-    console.log("Top up data:", {
-      royalId,
-      whatsappNumber,
-      selectedOption,
-    });
+    if (!selectedProduct) return;
 
-    // Trigger confetti animation
-    setShowConfetti(true);
+    try {
+      setIsProcessingPayment(true);
+      setPaymentError(null);
 
-    // Hide confetti after 3 seconds
-    setTimeout(() => {
-      setShowConfetti(false);
-    }, 3000);
+      // 1) Create transaction
+      const createRes = await transactionService.createTransaction({
+        total_diamond: selectedProduct.total_diamond,
+        total_amount: selectedProduct.price,
+        no_wa: whatsappNumber,
+      });
+      const trxId = createRes.transaction.id;
+      setCreatedTransactionId(trxId);
+      localStorage.setItem('lastTransactionId', String(trxId));
 
-    setIsDialogOpen(false);
+      // 2) Initiate QRIS
+      const qrisRes = await transactionService.initiateQrisPayment(trxId);
+      const qrUrl = qrisRes.qris?.qr_url;
+      const qrString = qrisRes.qris?.qr_string;
+      const redirectUrl = qrisRes.qris?.redirect_url;
+      setQrisData({ qrUrl: qrUrl || undefined, qrString: qrString || undefined, redirectUrl: redirectUrl || undefined, referenceId: qrisRes.reference_id });
+
+      // 3) Show QR step
+      setPaymentStep('qris');
+    } catch (err: any) {
+      const msg = err?.response?.data?.error || err?.message || 'Gagal memproses pembayaran';
+      setPaymentError(msg);
+    } finally {
+      setIsProcessingPayment(false);
+    }
   };
 
   const handleConfirmPayment = () => {
     setIsDialogOpen(true);
+  };
+
+  const initiateQrisAgain = async () => {
+    if (!createdTransactionId) return;
+    try {
+      setIsProcessingPayment(true);
+      setPaymentError(null);
+      const qrisRes = await transactionService.initiateQrisPayment(createdTransactionId);
+      const qrUrl = qrisRes.qris?.qr_url;
+      const qrString = qrisRes.qris?.qr_string;
+      const redirectUrl = qrisRes.qris?.redirect_url;
+      setQrisData({ qrUrl: qrUrl || undefined, qrString: qrString || undefined, redirectUrl: redirectUrl || undefined, referenceId: qrisRes.reference_id });
+      setPaymentStep('qris');
+    } catch (err: any) {
+      const msg = err?.response?.data?.error || err?.message || 'Gagal menginisiasi ulang QRIS';
+      setPaymentError(msg);
+    } finally {
+      setIsProcessingPayment(false);
+    }
   };
 
   return (
@@ -406,75 +527,190 @@ export function Home() {
                   <span className="arrow-bounce text-xl">→</span>
                 </button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[425px] bg-gray-900 border-gray-700 text-white">
+              <DialogContent className="sm:max-w-[480px] bg-gray-900 border-gray-700 text-white">
                 <DialogHeader>
-                  <DialogTitle>Konfirmasi Pembayaran</DialogTitle>
+                  <DialogTitle>{paymentStep === 'confirm' ? 'Konfirmasi Pembayaran' : 'Scan QRIS untuk membayar'}</DialogTitle>
                   <DialogDescription>
-                    Pastikan data yang Anda masukkan sudah benar sebelum
-                    melanjutkan pembayaran.
+                    {paymentStep === 'confirm'
+                      ? 'Pastikan data yang Anda masukkan sudah benar sebelum melanjutkan pembayaran.'
+                      : 'Buka aplikasi pembayaran Anda, pilih QRIS, lalu scan QR berikut untuk menyelesaikan pembayaran.'}
                   </DialogDescription>
                 </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="font-medium">Royal ID:</span>
-                      <span>{royalId}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="font-medium">WhatsApp:</span>
-                      <span>{whatsappNumber}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="font-medium">Paket:</span>
-                      <span>
-                        {productsResponse?.products?.find(
-                          (product: Product) => product.id === selectedTopUp
-                        )?.total_diamond
-                        }{" "}
-                      💎
-                    </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="font-medium">Harga:</span>
-                      <span className="font-bold text-green-600">
-                        {formatPrice(
-                          productsResponse?.products?.find(
-                            (product: Product) => product.id === selectedTopUp
-                          )?.price || 0
-                        )}
-                      </span>
-                    </div>
-                    {(() => {
-                       const selectedProduct = productsResponse?.products?.find(
-                         (product: Product) => product.id === selectedTopUp
-                       );
-                       const originalPrice = selectedProduct && selectedProduct.discount > 0 ? selectedProduct.price / (1 - selectedProduct.discount / 100) : null;
-                       return originalPrice ? (
-                         <div className="flex justify-between text-sm text-gray-400">
-                           <span>Harga Normal:</span>
-                           <span className="line-through">
-                             {formatPriceNoDecimal(originalPrice)}
-                           </span>
-                         </div>
-                       ) : null;
-                     })()}
+                {paymentError && (
+                  <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm rounded-md p-3">
+                    {paymentError}
                   </div>
+                )}
+                <div className="grid gap-4 py-4">
+                  {paymentStep === 'confirm' ? (
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span className="font-medium">Royal ID:</span>
+                        <span>{royalId}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="font-medium">WhatsApp:</span>
+                        <span>{whatsappNumber}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="font-medium">Paket:</span>
+                        <span>
+                          {productsResponse?.products?.find(
+                            (product: Product) => product.id === selectedTopUp
+                          )?.total_diamond}{" "}💎
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="font-medium">Harga:</span>
+                        <span className="font-bold text-green-600">
+                          {formatPrice(
+                            productsResponse?.products?.find(
+                              (product: Product) => product.id === selectedTopUp
+                            )?.price || 0
+                          )}
+                        </span>
+                      </div>
+                      {(() => {
+                        const selectedProduct = productsResponse?.products?.find(
+                          (product: Product) => product.id === selectedTopUp
+                        );
+                        const originalPrice = selectedProduct && selectedProduct.discount > 0 ? selectedProduct.price / (1 - selectedProduct.discount / 100) : null;
+                        return originalPrice ? (
+                          <div className="flex justify-between text-sm text-gray-400">
+                            <span>Harga Normal:</span>
+                            <span className="line-through">
+                              {formatPriceNoDecimal(originalPrice)}
+                            </span>
+                          </div>
+                        ) : null;
+                      })()}
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {/* Informasi nominal & diamond */}
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-300">Nominal</span>
+                        <span className="font-semibold text-green-500">
+                          {formatPrice(
+                            productsResponse?.products?.find(
+                              (product: Product) => product.id === selectedTopUp
+                            )?.price || 0
+                          )}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-300">Diamond</span>
+                        <span className="font-semibold">
+                          {productsResponse?.products?.find(
+                            (product: Product) => product.id === selectedTopUp
+                          )?.total_diamond}{" "}💎
+                        </span>
+                      </div>
+
+                      {/* QR & Status */}
+                      <div className="mt-2 p-4 rounded-xl bg-black/30 border border-gray-700 flex flex-col items-center justify-center">
+                        {isProcessingPayment ? (
+                          <div className="flex flex-col items-center justify-center py-8">
+                            <div className="h-10 w-10 rounded-full border-4 border-purple-500 border-t-transparent animate-spin" />
+                            <p className="mt-3 text-sm text-gray-300">Menginisiasi pembayaran...</p>
+                          </div>
+                        ) : qrisData?.qrUrl ? (
+                          <img src={qrisData.qrUrl} alt="QRIS" className="w-56 h-56 object-contain rounded" />
+                        ) : qrisData?.qrString ? (
+                          <div className="bg-white p-3 rounded">
+                            <QRCodeCanvas value={qrisData.qrString} size={220} includeMargin={false} />
+                          </div>
+                        ) : (
+                          <div className="text-center text-gray-300 text-sm">
+                            QR tidak tersedia. Silakan coba lagi.
+                          </div>
+                        )}
+
+                        {/* Badge status pembayaran */}
+                        <div className="mt-3">
+                          {paymentStatus === 'pending' && (
+                            <span className="px-2 py-1 text-xs rounded-full bg-yellow-500/20 text-yellow-300 border border-yellow-500/30">
+                              Menunggu pembayaran{backendStatus ? ` (${backendStatus})` : ''}
+                            </span>
+                          )}
+                          {paymentStatus === 'success' && (
+                            <span className="px-2 py-1 text-xs rounded-full bg-green-500/20 text-green-300 border border-green-500/30">
+                              Pembayaran diterima{backendStatus ? ` (${backendStatus})` : ''}
+                            </span>
+                          )}
+                          {paymentStatus === 'failed' && (
+                            <span className="px-2 py-1 text-xs rounded-full bg-red-500/20 text-red-300 border border-red-500/30">
+                              Pembayaran gagal/expired{backendStatus ? ` (${backendStatus})` : ''}
+                            </span>
+                          )}
+                        </div>
+
+                        {qrisData?.referenceId && (
+                          <p className="mt-3 text-xs text-gray-400">Ref: {qrisData.referenceId}</p>
+                        )}
+                      </div>
+
+                      <p className="text-xs text-gray-400 text-center">
+                        Jangan tutup atau refresh halaman selama proses pembayaran berlangsung.
+                      </p>
+                    </div>
+                  )}
                 </div>
                 <DialogFooter>
-                  <button
-                    type="button"
-                    onClick={() => setIsDialogOpen(false)}
-                    className="px-4 py-2 text-gray-300 border border-gray-600 rounded-md hover:bg-gray-800 transition-colors"
-                  >
-                    Batal
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleSubmit}
-                    className="px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-md hover:from-purple-700 hover:to-blue-700 transition-all duration-300"
-                  >
-                    Konfirmasi Pembayaran
-                  </button>
+                  {paymentStep === 'confirm' ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setIsDialogOpen(false)}
+                        className="px-4 py-2 text-gray-300 border border-gray-600 rounded-md hover:bg-gray-800 transition-colors"
+                      >
+                        Batal
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleSubmit}
+                        className="px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-md hover:from-purple-700 hover:to-blue-700 transition-all duration-300 disabled:opacity-70"
+                        disabled={isProcessingPayment}
+                      >
+                        {isProcessingPayment ? 'Memproses...' : 'Konfirmasi Pembayaran'}
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setIsDialogOpen(false)}
+                        className="px-4 py-2 text-gray-300 border border-gray-600 rounded-md hover:bg-gray-800 transition-colors"
+                      >
+                        Tutup
+                      </button>
+                      {qrisData?.redirectUrl && (
+                        <a
+                          href={qrisData.redirectUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                        >
+                          Bayar via halaman Zenospay
+                        </a>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setIsDialogOpen(false)}
+                        className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+                      >
+                        Saya sudah bayar
+                      </button>
+                      <button
+                        type="button"
+                        onClick={initiateQrisAgain}
+                        className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors"
+                        disabled={isProcessingPayment}
+                      >
+                        {isProcessingPayment ? 'Membuat QR...' : 'Buat QR baru'}
+                      </button>
+                    </>
+                  )}
                 </DialogFooter>
               </DialogContent>
             </Dialog>

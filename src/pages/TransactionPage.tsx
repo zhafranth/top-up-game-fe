@@ -1,124 +1,103 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { DataTable, Column } from "@/components/DataTable";
 import { Check, X, RotateCcw, Plus, Filter } from "lucide-react";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
+import { useTransactions } from "@/hooks/useTransactions";
+import type { TransactionsQueryParams } from "@/services/transaction";
 
-// Data dummy untuk Transaksi
-const transactionsData = [
-  {
-    id: 1,
-    transactionId: "TRX-001",
-    userId: "USR-001",
-    totalDiamond: 500,
-    amount: 50000,
-    status: "success",
-    createdAt: "2024-01-15 14:30:25",
-  },
-  {
-    id: 2,
-    transactionId: "TRX-002",
-    userId: "USR-002",
-    totalDiamond: 250,
-    amount: 25000,
-    status: "success",
-    createdAt: "2024-01-15 13:45:10",
-  },
-  {
-    id: 3,
-    transactionId: "TRX-003",
-    userId: "USR-003",
-    totalDiamond: 1000,
-    amount: 100000,
-    status: "pending",
-    createdAt: "2024-01-15 12:20:45",
-  },
-  {
-    id: 4,
-    transactionId: "TRX-004",
-    userId: "USR-004",
-    totalDiamond: 750,
-    amount: 75000,
-    status: "processing",
-    createdAt: "2024-01-15 11:15:30",
-  },
-  {
-    id: 5,
-    transactionId: "TRX-005",
-    userId: "USR-005",
-    totalDiamond: 1500,
-    amount: 150000,
-    status: "failed",
-    createdAt: "2024-01-15 10:05:15",
-  },
-  {
-    id: 6,
-    transactionId: "TRX-006",
-    userId: "USR-006",
-    totalDiamond: 300,
-    amount: 30000,
-    status: "success",
-    createdAt: "2024-01-14 16:40:20",
-  },
-];
+// Tipe baris transaksi sesuai response backend
+type TxRow = {
+  id: number;
+  merchant_transaction_id: string;
+  total_diamond: number;
+  total_amount: number;
+  status: "pending" | "processing" | "success" | "failed" | string;
+  no_wa: string;
+  created_at: string; // ISO string
+};
 
 export function TransactionPage() {
   const [startDate, setStartDate] = useState<Date | undefined>();
   const [endDate, setEndDate] = useState<Date | undefined>();
+  const [page, setPage] = useState<number>(1);
+  const [limit, setLimit] = useState<number>(10);
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | TransactionsQueryParams["status"]
+  >("all");
 
-  const filterTransactionsByDate = (transactions: typeof transactionsData) => {
-    if (!startDate && !endDate) {
-      return transactions;
-    }
+  const params: TransactionsQueryParams = useMemo(
+    () => ({
+      page,
+      limit,
+      status: statusFilter === "all" ? undefined : statusFilter,
+    }),
+    [page, limit, statusFilter]
+  );
 
-    return transactions.filter((transaction) => {
-      const transactionDate = new Date(transaction.createdAt);
+  const { data, isLoading, isError, refetch, isFetching } = useTransactions(params);
 
-      if (startDate && endDate) {
-        return transactionDate >= startDate && transactionDate <= endDate;
-      } else if (startDate) {
-        return transactionDate >= startDate;
-      } else if (endDate) {
-        return transactionDate <= endDate;
-      }
+  const serverTransactions = (data?.transactions ?? []) as TxRow[];
+
+  // Filter tanggal hanya terhadap data halaman saat ini (client-side)
+  const filteredTransactions = useMemo(() => {
+    if (!startDate && !endDate) return serverTransactions;
+    return serverTransactions.filter((t) => {
+      const d = new Date(t.created_at);
+      if (startDate && endDate) return d >= startDate && d <= endDate;
+      if (startDate) return d >= startDate;
+      if (endDate) return d <= endDate;
       return true;
     });
-  };
+  }, [serverTransactions, startDate, endDate]);
 
-  const filteredTransactions = filterTransactionsByDate(transactionsData);
+  const total = data?.pagination?.total ?? 0;
+  const totalPages = data?.pagination?.totalPages ?? 1;
 
-  const transactionColumns: Column<(typeof transactionsData)[0]>[] = [
+  const formatRupiah = (n: number) =>
+    new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR" })
+      .format(n)
+      .replace(/,00$/, "");
+
+  const formatDateTime = (iso: string) =>
+    new Date(iso).toLocaleString("id-ID", {
+      dateStyle: "medium",
+      timeStyle: "short",
+    });
+
+  const transactionColumns: Column<TxRow>[] = [
     {
-      key: "createdAt",
+      key: "created_at",
       header: "Created At",
       className: "text-muted-foreground",
+      render: (value) => <span>{formatDateTime(String(value))}</span>,
     },
     {
-      key: "transactionId",
+      key: "merchant_transaction_id",
       header: "ID Transaction",
       className: "font-medium text-primary",
     },
     {
-      key: "userId",
-      header: "User ID",
+      key: "no_wa",
+      header: "No WA",
       className: "font-medium text-foreground",
     },
     {
-      key: "totalDiamond",
+      key: "total_diamond",
       header: "Total Diamond",
       render: (value) => (
         <span className="font-medium text-blue-500">
-          {value?.toLocaleString()} 💎
+          {Number(value)?.toLocaleString()} 💎
         </span>
       ),
     },
     {
-      key: "amount",
+      key: "total_amount",
       header: "Amount",
       render: (value) => (
         <span className="font-medium text-green-500">
-          Rp {value?.toLocaleString("id-ID")}
+          {formatRupiah(Number(value) || 0)}
         </span>
       ),
     },
@@ -191,18 +170,18 @@ export function TransactionPage() {
               Kelola dan pantau semua transaksi top-up games.
             </p>
           </div>
-          <Button className="bg-primary hover:bg-primary/90">
+          <Button className="bg-primary hover:bg-primary/90" onClick={() => refetch()} disabled={isFetching}>
             <Plus className="h-4 w-4 mr-2" />
-            Tambah Transaksi
+            {isFetching ? "Merefresh..." : "Refresh"}
           </Button>
         </div>
       </div>
 
-      {/* Date Filter */}
+      {/* Filters */}
       <Card className="mb-6">
         <div className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-2 md:col-span-2">
               <label className="text-sm font-medium text-foreground flex items-center gap-2">
                 <Filter className="h-4 w-4 text-muted-foreground" />
                 Filter Tanggal
@@ -216,6 +195,44 @@ export function TransactionPage() {
                 endPlaceholder="Tanggal akhir"
               />
             </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">Status</label>
+              <select
+                className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+                value={statusFilter}
+                onChange={(e) => {
+                  const v = e.target.value as typeof statusFilter;
+                  setStatusFilter(v);
+                  setPage(1);
+                }}
+              >
+                <option value="all">Semua</option>
+                <option value="pending">Pending</option>
+                <option value="processing">Processing</option>
+                <option value="success">Success</option>
+                <option value="failed">Failed</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">Items per page</label>
+              <select
+                className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+                value={limit}
+                onChange={(e) => {
+                  setLimit(Number(e.target.value) || 10);
+                  setPage(1);
+                }}
+              >
+                {[5, 10, 20, 50].map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ))}
+              </select>
+            </div>
             <div className="flex items-end">
               <Button
                 variant="outline"
@@ -223,20 +240,57 @@ export function TransactionPage() {
                 onClick={() => {
                   setStartDate(undefined);
                   setEndDate(undefined);
+                  setStatusFilter("all");
+                  setLimit(10);
+                  setPage(1);
                 }}
               >
                 Reset Filter
               </Button>
             </div>
+            <div className="flex items-end">
+              <div className="w-full flex items-center justify-between gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page <= 1 || isLoading}
+                >
+                  Prev
+                </Button>
+                <span className="text-sm text-muted-foreground">
+                  Hal {page} dari {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={page >= totalPages || isLoading}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
       </Card>
+
+      {/* Loading & Error */}
+      {isLoading && (
+        <Card className="mb-4">
+          <div className="p-6 text-sm text-muted-foreground">Memuat data transaksi...</div>
+        </Card>
+      )}
+      {isError && (
+        <Card className="mb-4">
+          <div className="p-6 text-sm text-red-500">Gagal memuat data transaksi. Coba lagi.</div>
+        </Card>
+      )}
 
       {/* Transactions Table */}
       <DataTable
         columns={transactionColumns}
         data={filteredTransactions}
-        emptyMessage="Tidak ada transaksi yang ditemukan."
+        totalCount={total}
+        emptyMessage={isLoading ? "Memuat..." : "Tidak ada transaksi yang ditemukan."}
       />
     </>
   );
