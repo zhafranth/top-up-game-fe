@@ -19,8 +19,6 @@ import { ProductCardSkeleton } from "../components/ProductCardSkeleton";
 import { transactionService } from "../services/transaction";
 import { QRCodeCanvas } from "qrcode.react";
 
-
-
 export function Home() {
   const navigate = useNavigate();
   const [royalId, setRoyalId] = useState("");
@@ -30,9 +28,9 @@ export function Home() {
   const [showConfetti, setShowConfetti] = useState(false);
   const [whatsappError, setWhatsappError] = useState("");
   const [currentSlide, setCurrentSlide] = useState(0);
-  
+
   // Tambahan state untuk alur pembayaran QRIS
-  const [paymentStep, setPaymentStep] = useState<'confirm' | 'qris'>('confirm');
+  const [paymentStep, setPaymentStep] = useState<"confirm" | "qris">("confirm");
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
   const [qrisData, setQrisData] = useState<{
@@ -41,18 +39,22 @@ export function Home() {
     redirectUrl?: string;
     referenceId?: string;
   } | null>(null);
-  const [createdTransactionId, setCreatedTransactionId] = useState<number | null>(null);
+  const [createdTransactionId, setCreatedTransactionId] = useState<
+    number | null
+  >(null);
   // Status pembayaran (untuk indikator pada modal)
-  const [paymentStatus, setPaymentStatus] = useState<'idle' | 'pending' | 'success' | 'failed'>('idle');
+  const [paymentStatus, setPaymentStatus] = useState<
+    "idle" | "pending" | "success" | "failed"
+  >("idle");
   const [backendStatus, setBackendStatus] = useState<string | null>(null);
 
   // Reset state ketika dialog dibuka ulang
   useEffect(() => {
     if (isDialogOpen) {
-      setPaymentStep('confirm');
+      setPaymentStep("confirm");
       setPaymentError(null);
       setIsProcessingPayment(false);
-      setPaymentStatus('idle');
+      setPaymentStatus("idle");
       setBackendStatus(null);
     }
   }, [isDialogOpen]);
@@ -64,44 +66,46 @@ export function Home() {
     const isSuccess = (s: string) => {
       const x = s.toLowerCase();
       return (
-        x.includes('paid') ||
-        x.includes('success') ||
-        x.includes('settlement') ||
-        x.includes('completed') ||
-        x.includes('captured')
+        x.includes("paid") ||
+        x.includes("success") ||
+        x.includes("settlement") ||
+        x.includes("completed") ||
+        x.includes("captured")
       );
     };
 
     const isFailed = (s: string) => {
       const x = s.toLowerCase();
       return (
-        x.includes('failed') ||
-        x.includes('cancel') ||
-        x.includes('expired') ||
-        x.includes('void')
+        x.includes("failed") ||
+        x.includes("cancel") ||
+        x.includes("expired") ||
+        x.includes("void")
       );
     };
 
     const checkStatus = async () => {
       if (!createdTransactionId) return;
       try {
-        const trx = await transactionService.getTransaction(createdTransactionId);
-        const s = String(trx.status ?? '');
+        const trx = await transactionService.getTransaction(
+          createdTransactionId
+        );
+        const s = String(trx.status ?? "");
         setBackendStatus(s);
         if (s) {
           if (isSuccess(s)) {
-            setPaymentStatus('success');
+            setPaymentStatus("success");
             setShowConfetti(true);
             // Stop polling on success
             if (intervalId) clearInterval(intervalId);
             // Hide confetti after a while
             setTimeout(() => setShowConfetti(false), 3500);
           } else if (isFailed(s)) {
-            setPaymentStatus('failed');
+            setPaymentStatus("failed");
             // Stop polling on terminal failure
             if (intervalId) clearInterval(intervalId);
           } else {
-            setPaymentStatus('pending');
+            setPaymentStatus("pending");
           }
         }
       } catch (err) {
@@ -109,9 +113,9 @@ export function Home() {
       }
     };
 
-    if (isDialogOpen && paymentStep === 'qris' && createdTransactionId) {
+    if (isDialogOpen && paymentStep === "qris" && createdTransactionId) {
       // Immediately check once and then poll
-      setPaymentStatus((prev) => (prev === 'success' ? prev : 'pending'));
+      setPaymentStatus((prev) => (prev === "success" ? prev : "pending"));
       checkStatus();
       intervalId = setInterval(checkStatus, 3000);
     }
@@ -122,7 +126,11 @@ export function Home() {
   }, [isDialogOpen, paymentStep, createdTransactionId]);
 
   // Fetch products from API
-  const { data: productsResponse, isLoading, error } = useProducts({ limit: 20 });
+  const {
+    data: productsResponse,
+    isLoading,
+    error,
+  } = useProducts({ limit: 20 });
 
   const heroImages = [
     "https://images.unsplash.com/photo-1542751371-adc38448a05e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
@@ -238,19 +246,27 @@ export function Home() {
       });
       const trxId = createRes.transaction.id;
       setCreatedTransactionId(trxId);
-      localStorage.setItem('lastTransactionId', String(trxId));
+      localStorage.setItem("lastTransactionId", String(trxId));
 
       // 2) Initiate QRIS
       const qrisRes = await transactionService.initiateQrisPayment(trxId);
       const qrUrl = qrisRes.qris?.qr_url;
       const qrString = qrisRes.qris?.qr_string;
       const redirectUrl = qrisRes.qris?.redirect_url;
-      setQrisData({ qrUrl: qrUrl || undefined, qrString: qrString || undefined, redirectUrl: redirectUrl || undefined, referenceId: qrisRes.reference_id });
+      setQrisData({
+        qrUrl: qrUrl || undefined,
+        qrString: qrString || undefined,
+        redirectUrl: redirectUrl || undefined,
+        referenceId: qrisRes.reference_id,
+      });
 
       // 3) Show QR step
-      setPaymentStep('qris');
+      setPaymentStep("qris");
     } catch (err: any) {
-      const msg = err?.response?.data?.error || err?.message || 'Gagal memproses pembayaran';
+      const msg =
+        err?.response?.data?.error ||
+        err?.message ||
+        "Gagal memproses pembayaran";
       setPaymentError(msg);
     } finally {
       setIsProcessingPayment(false);
@@ -266,14 +282,24 @@ export function Home() {
     try {
       setIsProcessingPayment(true);
       setPaymentError(null);
-      const qrisRes = await transactionService.initiateQrisPayment(createdTransactionId);
+      const qrisRes = await transactionService.initiateQrisPayment(
+        createdTransactionId
+      );
       const qrUrl = qrisRes.qris?.qr_url;
       const qrString = qrisRes.qris?.qr_string;
       const redirectUrl = qrisRes.qris?.redirect_url;
-      setQrisData({ qrUrl: qrUrl || undefined, qrString: qrString || undefined, redirectUrl: redirectUrl || undefined, referenceId: qrisRes.reference_id });
-      setPaymentStep('qris');
+      setQrisData({
+        qrUrl: qrUrl || undefined,
+        qrString: qrString || undefined,
+        redirectUrl: redirectUrl || undefined,
+        referenceId: qrisRes.reference_id,
+      });
+      setPaymentStep("qris");
     } catch (err: any) {
-      const msg = err?.response?.data?.error || err?.message || 'Gagal menginisiasi ulang QRIS';
+      const msg =
+        err?.response?.data?.error ||
+        err?.message ||
+        "Gagal menginisiasi ulang QRIS";
       setPaymentError(msg);
     } finally {
       setIsProcessingPayment(false);
@@ -348,7 +374,7 @@ export function Home() {
                 animationSpeed={6}
                 className="font-bold"
               >
-                Top Up Games
+                Top Up Royal Dreams
               </GradientText>
             </h1>
             <p className="text-white text-xl max-w-2xl mx-auto leading-relaxed">
@@ -453,12 +479,17 @@ export function Home() {
             </div>
           ) : error ? (
             <div className="text-center py-12">
-              <p className="text-red-400">Gagal memuat produk. Silakan coba lagi.</p>
+              <p className="text-red-400">
+                Gagal memuat produk. Silakan coba lagi.
+              </p>
             </div>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-8">
               {productsResponse?.products?.map((product: Product) => {
-                const originalPrice = product.discount > 0 ? product.price / (1 - product.discount / 100) : null;
+                const originalPrice =
+                  product.discount > 0
+                    ? product.price / (1 - product.discount / 100)
+                    : null;
                 return (
                   <div key={product.id} className="relative">
                     {product.is_populer && (
@@ -472,7 +503,9 @@ export function Home() {
                         selectedTopUp === product.id
                           ? "border-purple-400 bg-purple-500/20 shadow-lg shadow-purple-500/25"
                           : "border-gray-600/50 bg-black/20 hover:border-purple-500/50"
-                      } ${product.is_populer ? "ring-2 ring-yellow-400/50" : ""}`}
+                      } ${
+                        product.is_populer ? "ring-2 ring-yellow-400/50" : ""
+                      }`}
                       style={{ marginTop: product.is_populer ? "8px" : "0" }}
                     >
                       {/* Flayer Diskon Segitiga di Pojok Kiri Atas */}
@@ -529,11 +562,15 @@ export function Home() {
               </DialogTrigger>
               <DialogContent className="sm:max-w-[480px] bg-gray-900 border-gray-700 text-white">
                 <DialogHeader>
-                  <DialogTitle>{paymentStep === 'confirm' ? 'Konfirmasi Pembayaran' : 'Scan QRIS untuk membayar'}</DialogTitle>
+                  <DialogTitle>
+                    {paymentStep === "confirm"
+                      ? "Konfirmasi Pembayaran"
+                      : "Scan QRIS untuk membayar"}
+                  </DialogTitle>
                   <DialogDescription>
-                    {paymentStep === 'confirm'
-                      ? 'Pastikan data yang Anda masukkan sudah benar sebelum melanjutkan pembayaran.'
-                      : 'Buka aplikasi pembayaran Anda, pilih QRIS, lalu scan QR berikut untuk menyelesaikan pembayaran.'}
+                    {paymentStep === "confirm"
+                      ? "Pastikan data yang Anda masukkan sudah benar sebelum melanjutkan pembayaran."
+                      : "Buka aplikasi pembayaran Anda, pilih QRIS, lalu scan QR berikut untuk menyelesaikan pembayaran."}
                   </DialogDescription>
                 </DialogHeader>
                 {paymentError && (
@@ -542,7 +579,7 @@ export function Home() {
                   </div>
                 )}
                 <div className="grid gap-4 py-4">
-                  {paymentStep === 'confirm' ? (
+                  {paymentStep === "confirm" ? (
                     <div className="space-y-2">
                       <div className="flex justify-between">
                         <span className="font-medium">Royal ID:</span>
@@ -555,9 +592,12 @@ export function Home() {
                       <div className="flex justify-between">
                         <span className="font-medium">Paket:</span>
                         <span>
-                          {productsResponse?.products?.find(
-                            (product: Product) => product.id === selectedTopUp
-                          )?.total_diamond}{" "}💎
+                          {
+                            productsResponse?.products?.find(
+                              (product: Product) => product.id === selectedTopUp
+                            )?.total_diamond
+                          }{" "}
+                          💎
                         </span>
                       </div>
                       <div className="flex justify-between">
@@ -571,10 +611,15 @@ export function Home() {
                         </span>
                       </div>
                       {(() => {
-                        const selectedProduct = productsResponse?.products?.find(
-                          (product: Product) => product.id === selectedTopUp
-                        );
-                        const originalPrice = selectedProduct && selectedProduct.discount > 0 ? selectedProduct.price / (1 - selectedProduct.discount / 100) : null;
+                        const selectedProduct =
+                          productsResponse?.products?.find(
+                            (product: Product) => product.id === selectedTopUp
+                          );
+                        const originalPrice =
+                          selectedProduct && selectedProduct.discount > 0
+                            ? selectedProduct.price /
+                              (1 - selectedProduct.discount / 100)
+                            : null;
                         return originalPrice ? (
                           <div className="flex justify-between text-sm text-gray-400">
                             <span>Harga Normal:</span>
@@ -601,9 +646,12 @@ export function Home() {
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-gray-300">Diamond</span>
                         <span className="font-semibold">
-                          {productsResponse?.products?.find(
-                            (product: Product) => product.id === selectedTopUp
-                          )?.total_diamond}{" "}💎
+                          {
+                            productsResponse?.products?.find(
+                              (product: Product) => product.id === selectedTopUp
+                            )?.total_diamond
+                          }{" "}
+                          💎
                         </span>
                       </div>
 
@@ -612,13 +660,23 @@ export function Home() {
                         {isProcessingPayment ? (
                           <div className="flex flex-col items-center justify-center py-8">
                             <div className="h-10 w-10 rounded-full border-4 border-purple-500 border-t-transparent animate-spin" />
-                            <p className="mt-3 text-sm text-gray-300">Menginisiasi pembayaran...</p>
+                            <p className="mt-3 text-sm text-gray-300">
+                              Menginisiasi pembayaran...
+                            </p>
                           </div>
                         ) : qrisData?.qrUrl ? (
-                          <img src={qrisData.qrUrl} alt="QRIS" className="w-56 h-56 object-contain rounded" />
+                          <img
+                            src={qrisData.qrUrl}
+                            alt="QRIS"
+                            className="w-56 h-56 object-contain rounded"
+                          />
                         ) : qrisData?.qrString ? (
                           <div className="bg-white p-3 rounded">
-                            <QRCodeCanvas value={qrisData.qrString} size={220} includeMargin={false} />
+                            <QRCodeCanvas
+                              value={qrisData.qrString}
+                              size={220}
+                              includeMargin={false}
+                            />
                           </div>
                         ) : (
                           <div className="text-center text-gray-300 text-sm">
@@ -628,36 +686,42 @@ export function Home() {
 
                         {/* Badge status pembayaran */}
                         <div className="mt-3">
-                          {paymentStatus === 'pending' && (
+                          {paymentStatus === "pending" && (
                             <span className="px-2 py-1 text-xs rounded-full bg-yellow-500/20 text-yellow-300 border border-yellow-500/30">
-                              Menunggu pembayaran{backendStatus ? ` (${backendStatus})` : ''}
+                              Menunggu pembayaran
+                              {backendStatus ? ` (${backendStatus})` : ""}
                             </span>
                           )}
-                          {paymentStatus === 'success' && (
+                          {paymentStatus === "success" && (
                             <span className="px-2 py-1 text-xs rounded-full bg-green-500/20 text-green-300 border border-green-500/30">
-                              Pembayaran diterima{backendStatus ? ` (${backendStatus})` : ''}
+                              Pembayaran diterima
+                              {backendStatus ? ` (${backendStatus})` : ""}
                             </span>
                           )}
-                          {paymentStatus === 'failed' && (
+                          {paymentStatus === "failed" && (
                             <span className="px-2 py-1 text-xs rounded-full bg-red-500/20 text-red-300 border border-red-500/30">
-                              Pembayaran gagal/expired{backendStatus ? ` (${backendStatus})` : ''}
+                              Pembayaran gagal/expired
+                              {backendStatus ? ` (${backendStatus})` : ""}
                             </span>
                           )}
                         </div>
 
                         {qrisData?.referenceId && (
-                          <p className="mt-3 text-xs text-gray-400">Ref: {qrisData.referenceId}</p>
+                          <p className="mt-3 text-xs text-gray-400">
+                            Ref: {qrisData.referenceId}
+                          </p>
                         )}
                       </div>
 
                       <p className="text-xs text-gray-400 text-center">
-                        Jangan tutup atau refresh halaman selama proses pembayaran berlangsung.
+                        Jangan tutup atau refresh halaman selama proses
+                        pembayaran berlangsung.
                       </p>
                     </div>
                   )}
                 </div>
                 <DialogFooter>
-                  {paymentStep === 'confirm' ? (
+                  {paymentStep === "confirm" ? (
                     <>
                       <button
                         type="button"
@@ -672,7 +736,9 @@ export function Home() {
                         className="px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-md hover:from-purple-700 hover:to-blue-700 transition-all duration-300 disabled:opacity-70"
                         disabled={isProcessingPayment}
                       >
-                        {isProcessingPayment ? 'Memproses...' : 'Konfirmasi Pembayaran'}
+                        {isProcessingPayment
+                          ? "Memproses..."
+                          : "Konfirmasi Pembayaran"}
                       </button>
                     </>
                   ) : (
@@ -707,7 +773,7 @@ export function Home() {
                         className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors"
                         disabled={isProcessingPayment}
                       >
-                        {isProcessingPayment ? 'Membuat QR...' : 'Buat QR baru'}
+                        {isProcessingPayment ? "Membuat QR..." : "Buat QR baru"}
                       </button>
                     </>
                   )}
