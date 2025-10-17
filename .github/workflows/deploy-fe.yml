@@ -48,7 +48,7 @@ jobs:
             rm -rf dist_old
             mv dist dist_old || true
             mkdir -p dist
-            tar -xzf ~/dist.tar.gz -C dist
+            tar --strip-components=1 -xzf ~/dist.tar.gz -C dist
             rm ~/dist.tar.gz
             chown -R www-data:www-data dist
             chmod -R 755 dist
