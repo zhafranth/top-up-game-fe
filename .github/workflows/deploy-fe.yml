@@ -1,0 +1,56 @@
+name: Deploy Frontend to VPS (root)
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18.x"
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Build frontend
+        run: yarn build
+
+      - name: Compress build output
+        run: tar -czf dist.tar.gz dist
+
+      - name: Upload build to VPS
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "dist.tar.gz"
+          target: "~/"
+
+      - name: Deploy build on VPS
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+            cd ${{ secrets.SERVER_PATH }}
+            rm -rf dist_old
+            mv dist dist_old || true
+            mkdir -p dist
+            tar -xzf ~/dist.tar.gz -C dist
+            rm ~/dist.tar.gz
+            chown -R www-data:www-data dist
+            chmod -R 755 dist
+            nginx -t && systemctl reload nginx
+            echo "✅ Deployment successful!"
