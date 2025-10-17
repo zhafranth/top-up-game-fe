@@ -23,6 +23,9 @@ jobs:
 
       - name: Build frontend
         run: yarn build
+        env:
+          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
+          VITE_API_KEY_CHECK_NICKNAME: ${{ vars.VITE_API_KEY_CHECK_NICKNAME }}
 
       - name: Compress build output
         run: tar -czf dist.tar.gz dist
