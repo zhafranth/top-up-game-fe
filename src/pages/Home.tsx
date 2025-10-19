@@ -13,6 +13,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "../components/ui/dialog";
+import { toast } from "sonner";
 import { useProducts } from "../hooks/useProducts";
 import { Product } from "../types/product";
 import { ProductCardSkeleton } from "../components/ProductCardSkeleton";
@@ -273,8 +274,24 @@ export function Home() {
     }
   };
 
-  const handleConfirmPayment = () => {
-    setIsDialogOpen(true);
+  const handleConfirmPayment = async () => {
+    if (!royalId) return;
+
+    try {
+      const response = await transactionService.checkNickname(royalId);
+      if (response.success) {
+        setIsDialogOpen(true);
+      } else {
+        toast(
+          "ID yang Anda masukkan tidak ditemukan. Silakan periksa kembali."
+        );
+      }
+    } catch (error: any) {
+      toast(
+        error?.response?.data?.message ||
+          "ID tidak ditemukan. Silakan coba lagi."
+      );
+    }
   };
 
   const initiateQrisAgain = async () => {

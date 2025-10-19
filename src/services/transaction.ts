@@ -1,4 +1,4 @@
-import { api } from '../lib/axios';
+import { api } from "../lib/axios";
 
 export interface CreateTransactionPayload {
   total_diamond: number;
@@ -13,6 +13,12 @@ export interface Transaction {
   no_wa: string;
   status: string;
   [key: string]: any;
+}
+
+export interface CheckNicknameResponse {
+  message: string;
+  success: boolean;
+  nickname?: string;
 }
 
 export interface CreateTransactionResponse {
@@ -37,7 +43,7 @@ export interface InitiateQrisResponse {
 export interface TransactionsQueryParams {
   page?: number; // default 1
   limit?: number; // default 10
-  status?: 'pending' | 'processing' | 'success' | 'failed';
+  status?: "pending" | "processing" | "success" | "failed";
 }
 
 export interface TransactionsListResponse {
@@ -51,16 +57,19 @@ export interface TransactionsListResponse {
 }
 
 export const transactionService = {
-  createTransaction: async (
-    payload: CreateTransactionPayload
-  ): Promise<CreateTransactionResponse> => {
-    const response = await api.post('/transactions', payload);
+  checkNickname: async (target: string): Promise<CheckNicknameResponse> => {
+    const response = await api.post(`/nickname/check`, { target });
     return response.data;
   },
 
-  initiateQrisPayment: async (
-    id: number
-  ): Promise<InitiateQrisResponse> => {
+  createTransaction: async (
+    payload: CreateTransactionPayload
+  ): Promise<CreateTransactionResponse> => {
+    const response = await api.post("/transactions", payload);
+    return response.data;
+  },
+
+  initiateQrisPayment: async (id: number): Promise<InitiateQrisResponse> => {
     const response = await api.post(`/transactions/${id}/pay/qris`);
     return response.data;
   },
@@ -76,7 +85,7 @@ export const transactionService = {
   getTransactions: async (
     params?: TransactionsQueryParams
   ): Promise<TransactionsListResponse> => {
-    const response = await api.get('/transactions', { params });
+    const response = await api.get("/transactions", { params });
     return response.data as TransactionsListResponse;
   },
 };
