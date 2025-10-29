@@ -391,7 +391,7 @@ export function Home() {
                 animationSpeed={6}
                 className="font-bold"
               >
-                Top Up Royal Dreams
+                Top Up Games
               </GradientText>
             </h1>
             <p className="text-white text-xl max-w-2xl mx-auto leading-relaxed">
