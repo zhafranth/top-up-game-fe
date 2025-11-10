@@ -11,7 +11,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
+  // DialogTrigger,
 } from "../components/ui/dialog";
 import { toast } from "sonner";
 import { useProducts } from "../hooks/useProducts";
@@ -29,6 +29,7 @@ export function Home() {
   const [showConfetti, setShowConfetti] = useState(false);
   const [whatsappError, setWhatsappError] = useState("");
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [nickname, setNickname] = useState("");
 
   // Tambahan state untuk alur pembayaran QRIS
   const [paymentStep, setPaymentStep] = useState<"confirm" | "qris">("confirm");
@@ -279,8 +280,10 @@ export function Home() {
 
     try {
       const response = await transactionService.checkNickname(royalId);
-      if (response.success) {
+      console.log("response", response);
+      if (response.success === true) {
         setIsDialogOpen(true);
+        setNickname(response.nick);
       } else {
         toast(
           "ID yang Anda masukkan tidak ditemukan. Silakan periksa kembali."
@@ -294,34 +297,34 @@ export function Home() {
     }
   };
 
-  const initiateQrisAgain = async () => {
-    if (!createdTransactionId) return;
-    try {
-      setIsProcessingPayment(true);
-      setPaymentError(null);
-      const qrisRes = await transactionService.initiateQrisPayment(
-        createdTransactionId
-      );
-      const qrUrl = qrisRes.qris?.qr_url;
-      const qrString = qrisRes.qris?.qr_string;
-      const redirectUrl = qrisRes.qris?.redirect_url;
-      setQrisData({
-        qrUrl: qrUrl || undefined,
-        qrString: qrString || undefined,
-        redirectUrl: redirectUrl || undefined,
-        referenceId: qrisRes.reference_id,
-      });
-      setPaymentStep("qris");
-    } catch (err: any) {
-      const msg =
-        err?.response?.data?.error ||
-        err?.message ||
-        "Gagal menginisiasi ulang QRIS";
-      setPaymentError(msg);
-    } finally {
-      setIsProcessingPayment(false);
-    }
-  };
+  // const initiateQrisAgain = async () => {
+  //   if (!createdTransactionId) return;
+  //   try {
+  //     setIsProcessingPayment(true);
+  //     setPaymentError(null);
+  //     const qrisRes = await transactionService.initiateQrisPayment(
+  //       createdTransactionId
+  //     );
+  //     const qrUrl = qrisRes.qris?.qr_url;
+  //     const qrString = qrisRes.qris?.qr_string;
+  //     const redirectUrl = qrisRes.qris?.redirect_url;
+  //     setQrisData({
+  //       qrUrl: qrUrl || undefined,
+  //       qrString: qrString || undefined,
+  //       redirectUrl: redirectUrl || undefined,
+  //       referenceId: qrisRes.reference_id,
+  //     });
+  //     setPaymentStep("qris");
+  //   } catch (err: any) {
+  //     const msg =
+  //       err?.response?.data?.error ||
+  //       err?.message ||
+  //       "Gagal menginisiasi ulang QRIS";
+  //     setPaymentError(msg);
+  //   } finally {
+  //     setIsProcessingPayment(false);
+  //   }
+  // };
 
   return (
     <div className="min-h-screen relative">
@@ -568,15 +571,13 @@ export function Home() {
         {royalId && whatsappNumber && selectedTopUp && (
           <div className="flex justify-center mt-8">
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger asChild>
-                <button
-                  onClick={handleConfirmPayment}
-                  className="px-8 py-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold rounded-full hover:from-purple-700 hover:to-blue-700 transition-all duration-300 transform hover:scale-105 flex items-center justify-center gap-3"
-                >
-                  Lanjutkan Pembayaran
-                  <span className="arrow-bounce text-xl">→</span>
-                </button>
-              </DialogTrigger>
+              <button
+                onClick={handleConfirmPayment}
+                className="px-8 py-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold rounded-full hover:from-purple-700 hover:to-blue-700 transition-all duration-300 transform hover:scale-105 flex items-center justify-center gap-3"
+              >
+                Lanjutkan Pembayaran
+                <span className="arrow-bounce text-xl">→</span>
+              </button>
               <DialogContent className="sm:max-w-[480px] bg-gray-900 border-gray-700 text-white">
                 <DialogHeader>
                   <DialogTitle>
@@ -598,6 +599,10 @@ export function Home() {
                 <div className="grid gap-4 py-4">
                   {paymentStep === "confirm" ? (
                     <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span className="font-medium">Nickname:</span>
+                        <span>{nickname}</span>
+                      </div>
                       <div className="flex justify-between">
                         <span className="font-medium">Royal ID:</span>
                         <span>{royalId}</span>
@@ -784,14 +789,14 @@ export function Home() {
                       >
                         Saya sudah bayar
                       </button>
-                      <button
+                      {/* <button
                         type="button"
                         onClick={initiateQrisAgain}
                         className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors"
                         disabled={isProcessingPayment}
                       >
                         {isProcessingPayment ? "Membuat QR..." : "Buat QR baru"}
-                      </button>
+                      </button> */}
                     </>
                   )}
                 </DialogFooter>

@@ -17,8 +17,8 @@ export interface Transaction {
 
 export interface CheckNicknameResponse {
   message: string;
+  nick: string;
   success: boolean;
-  nickname?: string;
 }
 
 export interface CreateTransactionResponse {
@@ -58,7 +58,7 @@ export interface TransactionsListResponse {
 
 export const transactionService = {
   checkNickname: async (target: string): Promise<CheckNicknameResponse> => {
-    const response = await api.post(`/nickname/check`, { target });
+    const response = await api.post(`/nickname/check-name-guin`, { target });
     return response.data;
   },
 
