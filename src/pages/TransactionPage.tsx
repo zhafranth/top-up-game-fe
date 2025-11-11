@@ -1,9 +1,11 @@
 import { useState, useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { DataTable, Column } from "@/components/DataTable";
-import { Check, X, RotateCcw, Plus, Filter } from "lucide-react";
-import { DateRangePicker } from "@/components/ui/date-range-picker";
+import { Check, X, RotateCcw, Plus } from "lucide-react";
+import Filters from "@/components/Filter";
+// import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { useTransactions } from "@/hooks/useTransactions";
 import type { TransactionsQueryParams } from "@/services/transaction";
 
@@ -21,22 +23,23 @@ type TxRow = {
 export function TransactionPage() {
   const [startDate, setStartDate] = useState<Date | undefined>();
   const [endDate, setEndDate] = useState<Date | undefined>();
-  const [page, setPage] = useState<number>(1);
-  const [limit, setLimit] = useState<number>(10);
-  const [statusFilter, setStatusFilter] = useState<
-    "all" | TransactionsQueryParams["status"]
-  >("all");
 
+  // Read active query params for page, limit, and status
+  const [searchParams] = useSearchParams();
+  const page = Number(searchParams.get("page") ?? "1");
+  const limit = Number(searchParams.get("limit") ?? "50");
+  const statusParam = searchParams.get("status") ?? undefined;
   const params: TransactionsQueryParams = useMemo(
     () => ({
       page,
       limit,
-      status: statusFilter === "all" ? undefined : statusFilter,
+      status: statusParam === "all" ? undefined : (statusParam as TransactionsQueryParams["status"]) || undefined,
     }),
-    [page, limit, statusFilter]
+    [page, limit, statusParam]
   );
 
-  const { data, isLoading, isError, refetch, isFetching } = useTransactions(params);
+  const { data, isLoading, isError, refetch, isFetching } =
+    useTransactions(params);
 
   const serverTransactions = (data?.transactions ?? []) as TxRow[];
 
@@ -53,7 +56,6 @@ export function TransactionPage() {
   }, [serverTransactions, startDate, endDate]);
 
   const total = data?.pagination?.total ?? 0;
-  const totalPages = data?.pagination?.totalPages ?? 1;
 
   const formatRupiah = (n: number) =>
     new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR" })
@@ -67,6 +69,12 @@ export function TransactionPage() {
     });
 
   const transactionColumns: Column<TxRow>[] = [
+    {
+      key: "id",
+      header: "ID",
+      className: "text-muted-foreground",
+      render: (value) => <span>{`#${value}`}</span>,
+    },
     {
       key: "created_at",
       header: "Created At",
@@ -170,118 +178,32 @@ export function TransactionPage() {
               Kelola dan pantau semua transaksi top-up games.
             </p>
           </div>
-          <Button className="bg-primary hover:bg-primary/90" onClick={() => refetch()} disabled={isFetching}>
+          <Button
+            className="bg-primary hover:bg-primary/90"
+            onClick={() => refetch()}
+            disabled={isFetching}
+          >
             <Plus className="h-4 w-4 mr-2" />
             {isFetching ? "Merefresh..." : "Refresh"}
           </Button>
         </div>
       </div>
 
-      {/* Filters */}
-      <Card className="mb-6">
-        <div className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2 md:col-span-2">
-              <label className="text-sm font-medium text-foreground flex items-center gap-2">
-                <Filter className="h-4 w-4 text-muted-foreground" />
-                Filter Tanggal
-              </label>
-              <DateRangePicker
-                startDate={startDate}
-                endDate={endDate}
-                onStartDateChange={setStartDate}
-                onEndDateChange={setEndDate}
-                startPlaceholder="Tanggal mulai"
-                endPlaceholder="Tanggal akhir"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Status</label>
-              <select
-                className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
-                value={statusFilter}
-                onChange={(e) => {
-                  const v = e.target.value as typeof statusFilter;
-                  setStatusFilter(v);
-                  setPage(1);
-                }}
-              >
-                <option value="all">Semua</option>
-                <option value="pending">Pending</option>
-                <option value="processing">Processing</option>
-                <option value="success">Success</option>
-                <option value="failed">Failed</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Items per page</label>
-              <select
-                className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
-                value={limit}
-                onChange={(e) => {
-                  setLimit(Number(e.target.value) || 10);
-                  setPage(1);
-                }}
-              >
-                {[5, 10, 20, 50].map((n) => (
-                  <option key={n} value={n}>
-                    {n}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="flex items-end">
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => {
-                  setStartDate(undefined);
-                  setEndDate(undefined);
-                  setStatusFilter("all");
-                  setLimit(10);
-                  setPage(1);
-                }}
-              >
-                Reset Filter
-              </Button>
-            </div>
-            <div className="flex items-end">
-              <div className="w-full flex items-center justify-between gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page <= 1 || isLoading}
-                >
-                  Prev
-                </Button>
-                <span className="text-sm text-muted-foreground">
-                  Hal {page} dari {totalPages}
-                </span>
-                <Button
-                  variant="outline"
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={page >= totalPages || isLoading}
-                >
-                  Next
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </Card>
+      <Filters />
 
       {/* Loading & Error */}
       {isLoading && (
         <Card className="mb-4">
-          <div className="p-6 text-sm text-muted-foreground">Memuat data transaksi...</div>
+          <div className="p-6 text-sm text-muted-foreground">
+            Memuat data transaksi...
+          </div>
         </Card>
       )}
       {isError && (
         <Card className="mb-4">
-          <div className="p-6 text-sm text-red-500">Gagal memuat data transaksi. Coba lagi.</div>
+          <div className="p-6 text-sm text-red-500">
+            Gagal memuat data transaksi. Coba lagi.
+          </div>
         </Card>
       )}
 
@@ -290,7 +212,9 @@ export function TransactionPage() {
         columns={transactionColumns}
         data={filteredTransactions}
         totalCount={total}
-        emptyMessage={isLoading ? "Memuat..." : "Tidak ada transaksi yang ditemukan."}
+        emptyMessage={
+          isLoading ? "Memuat..." : "Tidak ada transaksi yang ditemukan."
+        }
       />
     </>
   );

@@ -9,6 +9,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
+import Pagination from "@/components/Pagination";
 
 export interface Column<T> {
   key: keyof T | string;
@@ -92,6 +93,12 @@ export function DataTable<T extends Record<string, any>>({
         {data.length === 0 && (
           <div className="text-center py-8">
             <p className="text-muted-foreground">{emptyMessage}</p>
+          </div>
+        )}
+
+        {typeof totalCount === "number" && (
+          <div className="mt-6">
+            <Pagination total={totalCount} />
           </div>
         )}
       </div>
