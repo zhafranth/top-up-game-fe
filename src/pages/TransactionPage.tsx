@@ -79,15 +79,15 @@ export function TransactionPage() {
       render: (value) => <span>{`#${value}`}</span>,
     },
     {
-      key: "created_at",
-      header: "Created At",
-      className: "text-muted-foreground",
-      render: (value) => <span>{formatDateTime(String(value))}</span>,
-    },
-    {
       key: "merchant_transaction_id",
       header: "ID Transaction",
       className: "font-medium text-primary",
+    },
+    {
+      key: "target_id",
+      header: "Target ID",
+      className: "font-medium text-primary",
+      render: (value: string) => <span>{value || "-"}</span>,
     },
     {
       key: "no_wa",
@@ -138,6 +138,18 @@ export function TransactionPage() {
       ),
     },
     {
+      key: "created_at",
+      header: "Created At",
+      className: "text-muted-foreground",
+      render: (value) => <span>{formatDateTime(String(value))}</span>,
+    },
+    {
+      key: "updated_at",
+      header: "Updated At",
+      className: "text-muted-foreground",
+      render: (value) => <span>{formatDateTime(String(value))}</span>,
+    },
+    {
       key: "actions",
       header: "Action",
       render: () => (
@@ -156,13 +168,13 @@ export function TransactionPage() {
           >
             <X className="h-4 w-4" />
           </Button>
-          <Button
+          {/* <Button
             variant="ghost"
             size="sm"
             className="h-8 w-8 p-0 text-blue-500 hover:text-blue-600"
           >
             <RotateCcw className="h-4 w-4" />
-          </Button>
+          </Button> */}
         </div>
       ),
     },
@@ -186,7 +198,7 @@ export function TransactionPage() {
             onClick={() => refetch()}
             disabled={isFetching}
           >
-            <Plus className="h-4 w-4 mr-2" />
+            <RotateCcw className="h-4 w-4 mr-2" />
             {isFetching ? "Merefresh..." : "Refresh"}
           </Button>
         </div>
