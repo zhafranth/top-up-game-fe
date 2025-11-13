@@ -19,6 +19,7 @@ import { Product } from "../types/product";
 import { ProductCardSkeleton } from "../components/ProductCardSkeleton";
 import { transactionService } from "../services/transaction";
 import { QRCodeCanvas } from "qrcode.react";
+import type { Transaction } from "../services/transaction";
 
 export function Home() {
   const navigate = useNavigate();
@@ -49,6 +50,13 @@ export function Home() {
     "idle" | "pending" | "success" | "failed"
   >("idle");
   const [backendStatus, setBackendStatus] = useState<string | null>(null);
+
+  // States for Check Pembayaran modal
+  const [isCheckDialogOpen, setIsCheckDialogOpen] = useState(false);
+  const [checkTransactionId, setCheckTransactionId] = useState("");
+  const [checkLoading, setCheckLoading] = useState(false);
+  const [checkError, setCheckError] = useState<string | null>(null);
+  const [checkResult, setCheckResult] = useState<Transaction | null>(null);
 
   // Reset state ketika dialog dibuka ulang
   useEffect(() => {
@@ -234,6 +242,7 @@ export function Home() {
     const selectedProduct = productsResponse?.products?.find(
       (product: Product) => product.id === selectedTopUp
     );
+
     if (!selectedProduct) return;
 
     try {
@@ -297,35 +306,6 @@ export function Home() {
     }
   };
 
-  // const initiateQrisAgain = async () => {
-  //   if (!createdTransactionId) return;
-  //   try {
-  //     setIsProcessingPayment(true);
-  //     setPaymentError(null);
-  //     const qrisRes = await transactionService.initiateQrisPayment(
-  //       createdTransactionId
-  //     );
-  //     const qrUrl = qrisRes.qris?.qr_url;
-  //     const qrString = qrisRes.qris?.qr_string;
-  //     const redirectUrl = qrisRes.qris?.redirect_url;
-  //     setQrisData({
-  //       qrUrl: qrUrl || undefined,
-  //       qrString: qrString || undefined,
-  //       redirectUrl: redirectUrl || undefined,
-  //       referenceId: qrisRes.reference_id,
-  //     });
-  //     setPaymentStep("qris");
-  //   } catch (err: any) {
-  //     const msg =
-  //       err?.response?.data?.error ||
-  //       err?.message ||
-  //       "Gagal menginisiasi ulang QRIS";
-  //     setPaymentError(msg);
-  //   } finally {
-  //     setIsProcessingPayment(false);
-  //   }
-  // };
-
   return (
     <div className="min-h-screen relative">
       {/* Confetti Animation */}
@@ -338,10 +318,6 @@ export function Home() {
           />
         </div>
       )}
-      {/* Carousel Section */}
-      {/* <div className="container mx-auto px-4 py-6">
-        <Carousel items={carouselItems} autoPlay={true} autoPlayInterval={4000} />
-      </div> */}
 
       {/* Hero Section */}
       <div className="relative overflow-hidden">
@@ -370,14 +346,87 @@ export function Home() {
         <div className="absolute inset-0 wave-gradient opacity-20"></div>
         <div className="absolute inset-0 bg-gradient-to-br from-purple-600/20 via-blue-600/20 to-pink-600/20"></div>
 
-        {/* Login Button - Top Right */}
-        <div className="absolute top-6 right-6 z-20">
-          <button
-            onClick={() => navigate("/auth")}
-            className="text-gray-300 hover:text-white font-medium px-4 py-2 rounded-lg transition-all duration-300 hover:bg-white/10 backdrop-blur-sm border border-white/20 hover:border-white/30"
-          >
-            👤 Login
-          </button>
+        {/* Check Payment Button - Top Left */}
+        <div className="absolute top-6 left-6 z-20">
+          <Dialog open={isCheckDialogOpen} onOpenChange={setIsCheckDialogOpen}>
+            <button
+              onClick={() => setIsCheckDialogOpen(true)}
+              className="text-gray-300 hover:text-white font-medium px-4 py-2 rounded-lg transition-all duration-300 hover:bg-white/10 backdrop-blur-sm border border-white/20 hover:border-white/30"
+            >
+              💳 Check Pembayaran
+            </button>
+            <DialogContent className="sm:max-w-[480px] bg-gray-900 border-gray-700 text-white">
+              <DialogHeader>
+                <DialogTitle>Cek Status Pembayaran</DialogTitle>
+                <DialogDescription>
+                  Masukkan ID transaksi Anda
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-purple-300">
+                    ID Transaksi
+                  </label>
+                  <input
+                    type="text"
+                    value={checkTransactionId}
+                    onChange={(e) => setCheckTransactionId(e.target.value)}
+                    placeholder="Masukkan ID transaksi"
+                    className="w-full px-4 py-3 bg-black/30 border border-purple-500/30 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20"
+                  />
+                </div>
+                {checkError && (
+                  <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm rounded-md p-3">
+                    {checkError}
+                  </div>
+                )}
+                {checkLoading && (
+                  <div className="text-gray-300 text-sm">Memeriksa...</div>
+                )}
+                {checkResult && (
+                  <div className="space-y-2 text-sm text-gray-200">
+                    <div className="flex justify-between">
+                      <span className="font-medium">ID:</span>
+                      <span>{checkResult.id}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="font-medium">Status:</span>
+                      <span>{String(checkResult.status)}</span>
+                    </div>
+                    {"total_amount" in checkResult ? (
+                      <div className="flex justify-between">
+                        <span className="font-medium">Total:</span>
+                        <span>{checkResult.total_amount}</span>
+                      </div>
+                    ) : null}
+                    {"total_diamond" in checkResult ? (
+                      <div className="flex justify-between">
+                        <span className="font-medium">Diamond:</span>
+                        <span>{checkResult.total_diamond}</span>
+                      </div>
+                    ) : null}
+                  </div>
+                )}
+              </div>
+              <DialogFooter>
+                <button
+                  type="button"
+                  onClick={() => setIsCheckDialogOpen(false)}
+                  className="px-4 py-2 text-gray-300 border border-gray-600 rounded-md hover:bg-gray-800 transition-colors"
+                >
+                  Tutup
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {}}
+                  className="px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-md hover:from-purple-700 hover:to-blue-700 transition-all duration-300 disabled:opacity-70"
+                  disabled={checkLoading}
+                >
+                  {checkLoading ? "Memeriksa..." : "Cek"}
+                </button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
 
         <div className="container mx-auto px-4 py-16 relative z-10">
