@@ -91,12 +91,12 @@ const Pagination: React.FC<PaginationProps> = ({ total, className = "" }) => {
     updateParams({ limit: validLimit, page: 1 });
   };
 
-  const handlePageInput: React.ChangeEventHandler<HTMLInputElement> = (e) => {
-    const val = Number(e.target.value);
-    if (!Number.isNaN(val)) {
-      updateParams({ page: clampPage(val) });
-    }
-  };
+  // const handlePageInput: React.ChangeEventHandler<HTMLInputElement> = (e) => {
+  //   const val = Number(e.target.value);
+  //   if (!Number.isNaN(val)) {
+  //     updateParams({ page: clampPage(val) });
+  //   }
+  // };
 
   // Generate halaman yang ditampilkan ala shadcn (dengan ellipsis)
   const getVisiblePages = (current: number, totalPgs: number) => {

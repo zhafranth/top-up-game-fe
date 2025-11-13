@@ -21,8 +21,8 @@ type TxRow = {
 };
 
 export function TransactionPage() {
-  const [startDate, setStartDate] = useState<Date | undefined>();
-  const [endDate, setEndDate] = useState<Date | undefined>();
+  const [startDate] = useState<Date | undefined>();
+  const [endDate] = useState<Date | undefined>();
 
   // Read active query params for page, limit, and status
   const [searchParams] = useSearchParams();
@@ -33,7 +33,10 @@ export function TransactionPage() {
     () => ({
       page,
       limit,
-      status: statusParam === "all" ? undefined : (statusParam as TransactionsQueryParams["status"]) || undefined,
+      status:
+        statusParam === "all"
+          ? undefined
+          : (statusParam as TransactionsQueryParams["status"]) || undefined,
     }),
     [page, limit, statusParam]
   );

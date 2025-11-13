@@ -1,13 +1,9 @@
 import * as React from "react";
 import { Card } from "@/components/ui/card";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Filter as FilterIcon, Calendar as CalendarIcon } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
-import { Input } from "@/components/ui/input";
 
 export type StatusValue =
   | "pending"
