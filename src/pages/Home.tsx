@@ -1,6 +1,6 @@
 import { Footer } from "../components/Footer";
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+// import { useNavigate } from "react-router-dom";
 import Lottie from "lottie-react";
 import confettiAnimation from "../assets/confetti.json";
 import GradientText from "../components/GradientText";
@@ -22,7 +22,7 @@ import { QRCodeCanvas } from "qrcode.react";
 import type { Transaction } from "../services/transaction";
 
 export function Home() {
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
   const [royalId, setRoyalId] = useState("");
   const [whatsappNumber, setWhatsappNumber] = useState("");
   const [selectedTopUp, setSelectedTopUp] = useState<number | null>(null);
@@ -54,9 +54,9 @@ export function Home() {
   // States for Check Pembayaran modal
   const [isCheckDialogOpen, setIsCheckDialogOpen] = useState(false);
   const [checkTransactionId, setCheckTransactionId] = useState("");
-  const [checkLoading, setCheckLoading] = useState(false);
-  const [checkError, setCheckError] = useState<string | null>(null);
-  const [checkResult, setCheckResult] = useState<Transaction | null>(null);
+  const [checkLoading] = useState(false);
+  const [checkError] = useState<string | null>(null);
+  const [checkResult] = useState<Transaction | null>(null);
 
   // Reset state ketika dialog dibuka ulang
   useEffect(() => {

@@ -3,7 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { DataTable, Column } from "@/components/DataTable";
-import { Check, X, RotateCcw, Plus } from "lucide-react";
+import { Check, X, RotateCcw } from "lucide-react";
 import Filters from "@/components/Filter";
 // import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { useTransactions } from "@/hooks/useTransactions";
