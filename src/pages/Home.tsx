@@ -254,6 +254,7 @@ export function Home() {
         total_diamond: selectedProduct.total_diamond,
         total_amount: selectedProduct.price,
         no_wa: whatsappNumber,
+        target_id: Number(royalId),
       });
       const trxId = createRes.transaction.id;
       setCreatedTransactionId(trxId);

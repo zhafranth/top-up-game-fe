@@ -4,6 +4,7 @@ export interface CreateTransactionPayload {
   total_diamond: number;
   total_amount: number;
   no_wa: string;
+  target_id: number;
 }
 
 export interface Transaction {
