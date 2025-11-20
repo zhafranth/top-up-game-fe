@@ -19,7 +19,7 @@ import { Product } from "../types/product";
 import { ProductCardSkeleton } from "../components/ProductCardSkeleton";
 import { transactionService } from "../services/transaction";
 import { QRCodeCanvas } from "qrcode.react";
-import type { Transaction } from "../services/transaction";
+import type { TransactionStatusResponse } from "../services/transaction";
 
 export function Home() {
   // const navigate = useNavigate();
@@ -53,10 +53,13 @@ export function Home() {
 
   // States for Check Pembayaran modal
   const [isCheckDialogOpen, setIsCheckDialogOpen] = useState(false);
-  const [checkTransactionId, setCheckTransactionId] = useState("");
-  const [checkLoading] = useState(false);
-  const [checkError] = useState<string | null>(null);
-  const [checkResult] = useState<Transaction | null>(null);
+  const [checkMerchantTransactionId, setCheckMerchantTransactionId] =
+    useState("");
+  const [checkWhatsapp, setCheckWhatsapp] = useState("");
+  const [checkLoading, setCheckLoading] = useState(false);
+  const [checkError, setCheckError] = useState<string | null>(null);
+  const [checkResult, setCheckResult] =
+    useState<TransactionStatusResponse | null>(null);
 
   // Reset state ketika dialog dibuka ulang
   useEffect(() => {
@@ -231,6 +234,43 @@ export function Home() {
     }
   };
 
+  // Check Payment handler using merchant_transaction_id and no_wa
+  const handleCheckPaymentById = async () => {
+    const merchantId = checkMerchantTransactionId.trim();
+    const wa = checkWhatsapp.trim();
+
+    if (!merchantId || !wa) {
+      setCheckError("Merchant Transaction ID dan Nomor WhatsApp wajib diisi.");
+      return;
+    }
+
+    // Optional basic validation for WhatsApp format
+    const waDigits = wa.replace(/\D/g, "");
+    if (waDigits.length < 10 || waDigits.length > 15) {
+      setCheckError("Format nomor WhatsApp tidak valid.");
+      return;
+    }
+
+    try {
+      setCheckLoading(true);
+      setCheckError(null);
+      setCheckResult(null);
+      const res = await transactionService.getTransactionStatusByMerchant(
+        merchantId,
+        wa
+      );
+      setCheckResult(res);
+    } catch (error: any) {
+      const msg =
+        error?.response?.data?.error ||
+        error?.response?.data?.message ||
+        "Gagal memeriksa transaksi. Coba lagi.";
+      setCheckError(msg);
+    } finally {
+      setCheckLoading(false);
+    }
+  };
+
   const handleTopUpSelect = (productId: number) => {
     setSelectedTopUp(productId);
   };
@@ -360,19 +400,34 @@ export function Home() {
               <DialogHeader>
                 <DialogTitle>Cek Status Pembayaran</DialogTitle>
                 <DialogDescription>
-                  Masukkan ID transaksi Anda
+                  Masukkan Merchant Transaction ID dan nomor WhatsApp yang
+                  digunakan saat transaksi
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-purple-300">
-                    ID Transaksi
+                    Merchant Transaction ID
                   </label>
                   <input
                     type="text"
-                    value={checkTransactionId}
-                    onChange={(e) => setCheckTransactionId(e.target.value)}
-                    placeholder="Masukkan ID transaksi"
+                    value={checkMerchantTransactionId}
+                    onChange={(e) =>
+                      setCheckMerchantTransactionId(e.target.value)
+                    }
+                    placeholder="Masukkan Merchant Transaction ID"
+                    className="w-full px-4 py-3 bg-black/30 border border-purple-500/30 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-purple-300">
+                    Nomor WhatsApp
+                  </label>
+                  <input
+                    type="text"
+                    value={checkWhatsapp}
+                    onChange={(e) => setCheckWhatsapp(e.target.value)}
+                    placeholder="Contoh: 081234567890 atau 6281234567890"
                     className="w-full px-4 py-3 bg-black/30 border border-purple-500/30 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20"
                   />
                 </div>
@@ -388,24 +443,40 @@ export function Home() {
                   <div className="space-y-2 text-sm text-gray-200">
                     <div className="flex justify-between">
                       <span className="font-medium">ID:</span>
-                      <span>{checkResult.id}</span>
+                      <span>{checkResult.transaction.id}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="font-medium">Merchant ID:</span>
+                      <span>
+                        {checkResult.transaction.merchant_transaction_id}
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="font-medium">Status:</span>
                       <span>{String(checkResult.status)}</span>
                     </div>
-                    {"total_amount" in checkResult ? (
-                      <div className="flex justify-between">
-                        <span className="font-medium">Total:</span>
-                        <span>{checkResult.total_amount}</span>
-                      </div>
-                    ) : null}
-                    {"total_diamond" in checkResult ? (
-                      <div className="flex justify-between">
-                        <span className="font-medium">Diamond:</span>
-                        <span>{checkResult.total_diamond}</span>
-                      </div>
-                    ) : null}
+                    <div className="flex justify-between">
+                      <span className="font-medium">Total:</span>
+                      <span>
+                        {formatPrice(checkResult.transaction.total_amount)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="font-medium">Diamond:</span>
+                      <span>{checkResult.transaction.total_diamond}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="font-medium">Nomor WA:</span>
+                      <span>{checkResult.transaction.no_wa}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="font-medium">Dibuat:</span>
+                      <span>
+                        {new Date(
+                          checkResult?.transaction.created_at || ""
+                        ).toLocaleString("id-ID")}
+                      </span>
+                    </div>
                   </div>
                 )}
               </div>
@@ -419,7 +490,7 @@ export function Home() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => {}}
+                  onClick={handleCheckPaymentById}
                   className="px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-md hover:from-purple-700 hover:to-blue-700 transition-all duration-300 disabled:opacity-70"
                   disabled={checkLoading}
                 >

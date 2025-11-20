@@ -13,6 +13,10 @@ export interface Transaction {
   total_amount: number;
   no_wa: string;
   status: string;
+  merchant_transaction_id?: string;
+  target_id?: number;
+  created_at?: string; // ISO datetime
+  updated_at?: string; // ISO datetime
   [key: string]: any;
 }
 
@@ -38,6 +42,12 @@ export interface InitiateQrisResponse {
     transaction_id?: string; // provider id (optional)
     raw?: any;
   };
+}
+
+// Response for public status check by merchant_transaction_id and no_wa
+export interface TransactionStatusResponse {
+  status: "pending" | "processing" | "success" | "failed";
+  transaction: Transaction;
 }
 
 // Tambahan: tipe untuk list transaksi
@@ -88,5 +98,16 @@ export const transactionService = {
   ): Promise<TransactionsListResponse> => {
     const response = await api.get("/transactions", { params });
     return response.data as TransactionsListResponse;
+  },
+
+  // Public endpoint: check status by merchant_transaction_id and no_wa
+  getTransactionStatusByMerchant: async (
+    merchant_transaction_id: string,
+    no_wa: string
+  ): Promise<TransactionStatusResponse> => {
+    const response = await api.get("/transactions/status", {
+      params: { merchant_transaction_id, no_wa },
+    });
+    return response.data as TransactionStatusResponse;
   },
 };
