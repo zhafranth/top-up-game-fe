@@ -110,4 +110,9 @@ export const transactionService = {
     });
     return response.data as TransactionStatusResponse;
   },
+
+  updateTransactionStatus: async (id: number, status: string) => {
+    const response = await api.put(`/transactions/${id}`, { status });
+    return response.data;
+  },
 };

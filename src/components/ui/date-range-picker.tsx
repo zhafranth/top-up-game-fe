@@ -127,13 +127,12 @@ export function DateRangePicker({
                   value={startTime}
                   onChange={(e) => {
                     const val = normalizeTime(e.target.value);
+                    console.log("startTime", val);
                     setStartTime(val);
                     const baseDate = startSelectedDate ?? startDate;
                     if (baseDate) {
                       const final = combineDateAndTime(baseDate, val);
                       onStartDateChange?.(final);
-                      setStartOpen(false);
-                      if (!endDate) setEndOpen(true);
                     }
                   }}
                 />
@@ -193,8 +192,8 @@ export function DateRangePicker({
                     const baseDate = endSelectedDate ?? endDate;
                     if (baseDate) {
                       const final = combineDateAndTime(baseDate, val);
+                      console.log("final", final);
                       onEndDateChange?.(final);
-                      setEndOpen(false);
                     }
                   }}
                 />
@@ -205,16 +204,6 @@ export function DateRangePicker({
       </div>
       <button
         onClick={() => {
-          // reset local states
-          // setStartSelectedDate(undefined);
-          // setEndSelectedDate(undefined);
-          // setStartTime("00:00:00");
-          // setEndTime("00:00:00");
-          // setStartOpen(false);
-          // setEndOpen(false);
-          // // notify parent to clear values
-          // onStartDateChange?.(undefined);
-          // onEndDateChange?.(undefined);
           onClear?.();
         }}
         className="text-muted-foreground"

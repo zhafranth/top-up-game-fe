@@ -1,10 +1,6 @@
-import { useState } from "react";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { DataTable, Column } from "@/components/DataTable";
-import { Edit, Trash2, Plus, Filter, Search } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { DateRangePicker } from "@/components/ui/date-range-picker";
+import { Edit, Trash2, Plus } from "lucide-react";
 
 // Data dummy untuk User
 const usersData = [
@@ -46,44 +42,6 @@ const usersData = [
 ];
 
 export function UserPage() {
-  const [startDate, setStartDate] = useState<Date | undefined>();
-  const [endDate, setEndDate] = useState<Date | undefined>();
-  const [searchTerm, setSearchTerm] = useState("");
-
-  const filterUsersByDate = (users: typeof usersData) => {
-    if (!startDate && !endDate) {
-      return users;
-    }
-
-    return users.filter((user) => {
-      const createdDate = new Date(user.createdAt);
-
-      if (startDate && endDate) {
-        return createdDate >= startDate && createdDate <= endDate;
-      } else if (startDate) {
-        return createdDate >= startDate;
-      } else if (endDate) {
-        return createdDate <= endDate;
-      }
-      return true;
-    });
-  };
-
-  const filterUsersBySearch = (users: typeof usersData) => {
-    if (!searchTerm) {
-      return users;
-    }
-
-    return users.filter(
-      (user) =>
-        user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.role.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  };
-
-  const filteredUsers = filterUsersBySearch(filterUsersByDate(usersData));
-
   const userColumns: Column<(typeof usersData)[0]>[] = [
     {
       key: "username",
@@ -170,66 +128,10 @@ export function UserPage() {
         </div>
       </div>
 
-      {/* Filters */}
-      <Card className="mb-6">
-        <div className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Search */}
-            <div className="md:col-span-2">
-              <label className="text-sm font-medium text-foreground mb-2 block">
-                <Search className="h-4 w-4 inline mr-2" />
-                Cari User
-              </label>
-              <Input
-                placeholder="Cari berdasarkan username, nama, atau role..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full"
-              />
-            </div>
-
-            {/* Reset Button */}
-            <div className="flex items-end">
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => {
-                  setStartDate(undefined);
-                  setEndDate(undefined);
-                  setSearchTerm("");
-                }}
-              >
-                Reset Filter
-              </Button>
-            </div>
-          </div>
-
-          {/* Date Filter - Separate row for better spacing */}
-          <div className="mt-4 pt-4 border-t border-border">
-            <label className="text-sm font-medium text-foreground mb-2 block">
-              <Filter className="h-4 w-4 inline mr-2" />
-              Filter Tanggal Bergabung
-            </label>
-            <div className="max-w-md">
-              <div className="flex items-center gap-2">
-                <DateRangePicker
-                  startDate={startDate}
-                  endDate={endDate}
-                  onStartDateChange={setStartDate}
-                  onEndDateChange={setEndDate}
-                  startPlaceholder="Pilih tanggal mulai"
-                  endPlaceholder="Pilih tanggal akhir"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      </Card>
-
       {/* Users Table */}
       <DataTable
         columns={userColumns}
-        data={filteredUsers}
+        data={[]}
         title="Daftar User"
         totalCount={usersData.length}
         emptyMessage="Tidak ada user yang ditemukan."

@@ -7,7 +7,12 @@ import { Check, X, RotateCcw } from "lucide-react";
 import Filters from "@/components/Filter";
 // import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { useTransactions } from "@/hooks/useTransactions";
-import type { TransactionsQueryParams } from "@/services/transaction";
+import {
+  transactionService,
+  type TransactionsQueryParams,
+} from "@/services/transaction";
+import { Separator } from "@/components/ui/separator";
+import { formatDate } from "@/lib/date";
 
 // Tipe baris transaksi sesuai response backend
 type TxRow = {
@@ -18,6 +23,7 @@ type TxRow = {
   status: "pending" | "processing" | "success" | "failed" | string;
   no_wa: string;
   created_at: string; // ISO string
+  updated_at: string; // ISO string
 };
 
 export function TransactionPage() {
@@ -29,6 +35,9 @@ export function TransactionPage() {
   const page = Number(searchParams.get("page") ?? "1");
   const limit = Number(searchParams.get("limit") ?? "50");
   const statusParam = searchParams.get("status") ?? undefined;
+  const startParam = searchParams.get("start") ?? undefined;
+  const endParam = searchParams.get("end") ?? undefined;
+
   const params: TransactionsQueryParams = useMemo(
     () => ({
       page,
@@ -37,8 +46,12 @@ export function TransactionPage() {
         statusParam === "all"
           ? undefined
           : (statusParam as TransactionsQueryParams["status"]) || undefined,
+      start: startParam
+        ? formatDate(startParam, "YYYY-MM-DD HH:mm:ss")
+        : undefined,
+      end: endParam ? formatDate(endParam, "YYYY-MM-DD HH:mm:ss") : undefined,
     }),
-    [page, limit, statusParam]
+    [page, limit, statusParam, startParam, endParam]
   );
 
   const { data, isLoading, isError, refetch, isFetching } =
@@ -70,6 +83,11 @@ export function TransactionPage() {
       dateStyle: "medium",
       timeStyle: "short",
     });
+
+  const updateStatus = async (id: number, status: string) => {
+    await transactionService.updateTransactionStatus(id, status);
+    refetch();
+  };
 
   const transactionColumns: Column<TxRow>[] = [
     {
@@ -138,26 +156,27 @@ export function TransactionPage() {
       ),
     },
     {
-      key: "created_at",
-      header: "Created At",
+      key: "date",
+      header: "Date",
       className: "text-muted-foreground",
-      render: (value) => <span>{formatDateTime(String(value))}</span>,
-    },
-    {
-      key: "updated_at",
-      header: "Updated At",
-      className: "text-muted-foreground",
-      render: (value) => <span>{formatDateTime(String(value))}</span>,
+      render: (_, row) => (
+        <>
+          <span>{formatDateTime(String(row.created_at))}</span>
+          <Separator />
+          <span>{formatDateTime(String(row.updated_at))}</span>
+        </>
+      ),
     },
     {
       key: "actions",
       header: "Action",
-      render: () => (
+      render: (_, { id }) => (
         <div className="flex items-center gap-2">
           <Button
             variant="ghost"
             size="sm"
             className="h-8 w-8 p-0 text-green-500 hover:text-green-600"
+            onClick={() => updateStatus(id, "success")}
           >
             <Check className="h-4 w-4" />
           </Button>
@@ -165,16 +184,10 @@ export function TransactionPage() {
             variant="ghost"
             size="sm"
             className="h-8 w-8 p-0 text-red-500 hover:text-red-600"
+            onClick={() => updateStatus(id, "failed")}
           >
             <X className="h-4 w-4" />
           </Button>
-          {/* <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 w-8 p-0 text-blue-500 hover:text-blue-600"
-          >
-            <RotateCcw className="h-4 w-4" />
-          </Button> */}
         </div>
       ),
     },

@@ -1,10 +1,8 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { DataTable, Column } from "@/components/DataTable";
-import { Edit, Trash2, Plus, Filter, Search } from "lucide-react";
+import { Edit, Trash2, Plus } from "lucide-react";
 import { useProducts } from "../hooks/useProducts";
 import { Product } from "../types/product";
 import { CreateProductModal } from "../components/CreateProductModal";
@@ -12,10 +10,6 @@ import { DeleteProductModal } from "../components/DeleteProductModal";
 import { UpdateProductModal } from "../components/UpdateProductModal";
 
 export function ProductPage() {
-  const [startDate, setStartDate] = useState<Date | undefined>();
-  const [endDate, setEndDate] = useState<Date | undefined>();
-  const [searchTerm, setSearchTerm] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("");
   const [currentPage] = useState(1);
   const [pageSize] = useState(10);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -32,32 +26,7 @@ export function ProductPage() {
   } = useProducts({
     page: currentPage,
     limit: pageSize,
-    search: searchTerm || undefined,
   });
-
-  const filterProductsByDate = (products: Product[]) => {
-    if (!startDate && !endDate) {
-      return products;
-    }
-
-    return products.filter((product) => {
-      const productDate = new Date(product.created_at);
-
-      if (startDate && endDate) {
-        return productDate >= startDate && productDate <= endDate;
-      } else if (startDate) {
-        return productDate >= startDate;
-      } else if (endDate) {
-        return productDate <= endDate;
-      }
-      return true;
-    });
-  };
-
-  // Filter products locally by date (search is handled by API)
-  const filteredProducts = productsResponse?.products
-    ? filterProductsByDate(productsResponse.products)
-    : [];
 
   const handleDeleteProduct = (product: Product) => {
     setProductToDelete(product);
@@ -178,78 +147,6 @@ export function ProductPage() {
         </div>
       </div>
 
-      {/* Filters */}
-      <Card className="mb-6">
-        <div className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Search */}
-            <div className="lg:col-span-2">
-              <label className="text-sm font-medium text-foreground mb-2 block">
-                <Search className="h-4 w-4 inline mr-2" />
-                Cari Product
-              </label>
-              <Input
-                placeholder="Cari berdasarkan nama atau kategori..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full"
-              />
-            </div>
-
-            {/* Popular Filter */}
-            <div>
-              <label className="text-sm font-medium text-foreground mb-2 block">
-                <Filter className="h-4 w-4 inline mr-2" />
-                Filter Popular
-              </label>
-              <select
-                value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value)}
-                className="w-full h-10 px-3 py-2 border border-input bg-background rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-              >
-                <option value="">Semua Product</option>
-                <option value="popular">Hanya Popular</option>
-                <option value="not-popular">Tidak Popular</option>
-              </select>
-            </div>
-
-            {/* Reset Button */}
-            <div className="flex items-end">
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => {
-                  setStartDate(undefined);
-                  setEndDate(undefined);
-                  setSearchTerm("");
-                  setCategoryFilter("");
-                }}
-              >
-                Reset Filter
-              </Button>
-            </div>
-          </div>
-
-          {/* Date Filter - Separate row for better spacing */}
-          <div className="mt-4 pt-4 border-t border-border">
-            <label className="text-sm font-medium text-foreground mb-2 block">
-              <Filter className="h-4 w-4 inline mr-2" />
-              Filter Tanggal Dibuat
-            </label>
-            <div className="max-w-md">
-              <DateRangePicker
-                startDate={startDate}
-                endDate={endDate}
-                onStartDateChange={setStartDate}
-                onEndDateChange={setEndDate}
-                startPlaceholder="Pilih tanggal mulai"
-                endPlaceholder="Pilih tanggal akhir"
-              />
-            </div>
-          </div>
-        </div>
-      </Card>
-
       {/* Products Table */}
       {isLoading ? (
         <Card className="p-8">
@@ -269,7 +166,7 @@ export function ProductPage() {
       ) : (
         <DataTable
           columns={productColumns}
-          data={filteredProducts}
+          data={productsResponse?.products || []}
           title="Daftar Product"
           totalCount={productsResponse?.pagination?.total || 0}
           emptyMessage="Tidak ada product yang ditemukan."

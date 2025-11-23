@@ -4,6 +4,7 @@ import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { useSearchParams } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
+import Select from "./Select";
 
 export type StatusValue =
   | "pending"
@@ -63,19 +64,6 @@ function parseDateTimeString(s?: string): { date?: Date; time?: string } {
   return { date: dt, time: timeStr };
 }
 
-// Helper: gabungkan tanggal + waktu menjadi Date
-function combineDateTime(date?: Date, time?: string): Date | undefined {
-  if (!date) return undefined;
-  if (!time) return date;
-  const [hh, mm] = time.split(":").map((s) => parseInt(s, 10));
-  const d = new Date(date);
-  if (!Number.isNaN(hh)) d.setHours(hh);
-  if (!Number.isNaN(mm)) d.setMinutes(mm);
-  d.setSeconds(0);
-  d.setMilliseconds(0);
-  return d;
-}
-
 export function Filter({
   className,
   showStatus = true,
@@ -98,8 +86,6 @@ export function Filter({
   );
   const [startDate, setStartDate] = React.useState<Date | undefined>();
   const [endDate, setEndDate] = React.useState<Date | undefined>();
-  const [startTime, setStartTime] = React.useState<string | undefined>(); // HH:mm
-  const [endTime, setEndTime] = React.useState<string | undefined>(); // HH:mm
 
   // Inisialisasi dari query params saat mount / saat URL berubah
   React.useEffect(() => {
@@ -109,15 +95,11 @@ export function Filter({
 
     setStatus((qStatus as StatusValue) || defaultStatus);
 
-    const { date: sDate, time: sTime } = parseDateTimeString(
-      qStart || undefined
-    );
-    const { date: eDate, time: eTime } = parseDateTimeString(qEnd || undefined);
+    const { date: sDate } = parseDateTimeString(qStart || undefined);
+    const { date: eDate } = parseDateTimeString(qEnd || undefined);
 
     setStartDate(sDate);
     setEndDate(eDate);
-    setStartTime(sTime);
-    setEndTime(eTime);
   }, [searchParams]);
 
   // Update query params helper
@@ -126,7 +108,6 @@ export function Filter({
       next: Partial<{ status?: StatusValue | "all"; start?: Date; end?: Date }>
     ) => {
       const params = new URLSearchParams(searchParams.toString());
-      // console.log("next", next);
 
       // Status
       if (showStatus && typeof next.status !== "undefined") {
@@ -179,24 +160,18 @@ export function Filter({
 
   const handleStartDateChange = (date?: Date) => {
     setStartDate(date);
-    const merged = combineDateTime(date, startTime);
-    updateQueryParams({ start: merged });
+    updateQueryParams({ start: date });
   };
 
   const handleEndDateChange = (date?: Date) => {
     setEndDate(date);
-    const merged = combineDateTime(date, endTime);
-    // console.log("merged", merged);
-    // console.log("date", date);
-    updateQueryParams({ end: merged });
+    updateQueryParams({ end: date });
   };
 
   const resetDate = () => {
     // setStatus(defaultStatus);
     setStartDate(undefined);
     setEndDate(undefined);
-    setStartTime(undefined);
-    setEndTime(undefined);
 
     const params = new URLSearchParams(searchParams.toString());
     // params.delete(STATUS_PARAM);
@@ -205,20 +180,6 @@ export function Filter({
     setSearchParams(params);
     onFiltersChange?.({});
   };
-  // const resetFilters = () => {
-  //   setStatus(defaultStatus);
-  //   setStartDate(undefined);
-  //   setEndDate(undefined);
-  //   setStartTime(undefined);
-  //   setEndTime(undefined);
-
-  //   const params = new URLSearchParams(searchParams.toString());
-  //   params.delete(STATUS_PARAM);
-  //   params.delete(START_PARAM);
-  //   params.delete(END_PARAM);
-  //   setSearchParams(params);
-  //   onFiltersChange?.({});
-  // };
 
   return (
     <Card className={cn("p-6 mb-6", className)}>
@@ -242,28 +203,18 @@ export function Filter({
         {showStatus && (
           <div className="flex-1">
             <p className="mb-2">Status</p>
-            <select
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+            <Select
               value={status}
-              onChange={(e) =>
-                handleStatusChange(e.target.value as StatusValue | "all")
+              onChange={(value) =>
+                handleStatusChange(value as StatusValue | "all")
               }
-            >
-              {statusOptions.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
+              placeholder="Pilih status"
+              options={statusOptions}
+              className="w-full"
+            />
           </div>
         )}
       </div>
-
-      {/* <div className="mt-6 flex-1 flex-col gap-3 justify-end">
-        <Button variant="outline" onClick={resetFilters}>
-          Reset Filter
-        </Button>
-      </div> */}
     </Card>
   );
 }
