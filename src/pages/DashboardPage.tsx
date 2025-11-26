@@ -1,6 +1,7 @@
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Users, Package, CreditCard, DollarSign } from "lucide-react";
+import { BarChartBase } from "@/components/BarChartBase";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
 
 // Dummy data untuk dashboard
 const dashboardStats = [
@@ -62,6 +63,36 @@ const recentTransactions = [
   },
 ];
 
+// Data dummy total transaksi per bulan tahun 2025
+const transaksiBulanan2025 = [
+  { bulan: "Jan", total: 120 },
+  { bulan: "Feb", total: 95 },
+  { bulan: "Mar", total: 130 },
+  { bulan: "Apr", total: 150 },
+  { bulan: "Mei", total: 170 },
+  { bulan: "Jun", total: 160 },
+  { bulan: "Jul", total: 175 },
+  { bulan: "Agu", total: 180 },
+  { bulan: "Sep", total: 165 },
+  { bulan: "Okt", total: 190 },
+  { bulan: "Nov", total: 200 },
+  { bulan: "Des", total: 210 },
+];
+
+// Util format Rupiah untuk menampilkan omset
+const formatRupiah = (n: number) =>
+  new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR" }).format(n);
+
+// Tambahan data dummy untuk ranking total transaksi per product
+const productTransactionsRanking = [
+  { product: "Mobile Legends Diamond", total: 320, revenue: 16000000 },
+  { product: "Free Fire Diamond", total: 280, revenue: 12600000 },
+  { product: "PUBG Mobile UC", total: 260, revenue: 11700000 },
+  { product: "Genshin Impact Genesis Crystals", total: 220, revenue: 11000000 },
+  { product: "Valorant Points", total: 180, revenue: 9000000 },
+];
+const maxTotal = Math.max(...productTransactionsRanking.map((p) => p.total));
+
 export function DashboardPage() {
   return (
     <>
@@ -72,6 +103,9 @@ export function DashboardPage() {
           Selamat datang kembali! Berikut adalah yang terjadi dengan platform
           top-up games Anda.
         </p>
+        <div className="w-2/5 mt-5">
+          <DateRangePicker showTime={false} />
+        </div>
       </div>
 
       {/* Stats Grid */}
@@ -102,7 +136,75 @@ export function DashboardPage() {
       </div>
 
       {/* Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8"></div>
+      <div className="grid grid-cols-1 gap-8">
+        <Card className="p-6 gaming-card">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-xl font-semibold text-foreground">
+                Total Transaksi per Bulan (2025)
+              </h2>
+              <div className="flex flex-wrap items-center gap-2 mt-3">
+                <div className="feature-chip text-violet-300 border-violet-400 ring-2 ring-violet-400">
+                  <span className="font-medium">Jumlah Transaksi</span>
+                </div>
+                <div className="feature-chip text-muted-foreground">
+                  <span className="font-medium">Total Pendapatan</span>
+                </div>
+                <div className="feature-chip text-muted-foreground">
+                  <span className="font-medium">Total Profit</span>
+                </div>
+              </div>
+            </div>
+            <span className="text-sm text-muted-foreground">Dummy Data</span>
+          </div>
+          <BarChartBase
+            data={transaksiBulanan2025}
+            xKey="bulan"
+            yKey="total"
+            height={300}
+            barColor="#8b5cf6" // violet-500
+            yAxisFormatter={(v) => `${v}`}
+          />
+        </Card>
+
+        {/* Ranking Produk Berdasarkan Total Transaksi */}
+        <Card className="p-6 gaming-card">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-semibold text-foreground">
+              Ranking Produk Berdasarkan Total Transaksi
+            </h2>
+            <span className="text-sm text-muted-foreground">Dummy Data</span>
+          </div>
+          <div className="space-y-4">
+            {productTransactionsRanking.map((item, index) => {
+              const rankClass =
+                index === 0
+                  ? "bg-yellow-500 text-black ring-2 ring-yellow-300"
+                  : index === 1
+                  ? "bg-gray-400 text-black ring-2 ring-gray-300"
+                  : index === 2
+                  ? "bg-orange-500 text-white ring-2 ring-orange-300"
+                  : "bg-secondary text-foreground";
+              return (
+                <div key={item.product} className="flex items-center gap-4">
+                  <div className={`w-7 h-7 flex items-center justify-center rounded-full text-xs font-semibold ${rankClass}`}>
+                    {index + 1}
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium text-foreground">{item.product}</span>
+                      <div className="text-right">
+                        <div className="text-sm text-muted-foreground">{item.total} transaksi</div>
+                        <div className="text-sm font-medium text-foreground">{formatRupiah(item.revenue)}</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+      </div>
     </>
   );
 }
