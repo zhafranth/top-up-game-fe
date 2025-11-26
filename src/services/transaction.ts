@@ -3,6 +3,7 @@ import { api } from "../lib/axios";
 export interface CreateTransactionPayload {
   total_diamond: number;
   total_amount: number;
+  actual_price: number;
   no_wa: string;
   target_id: number;
 }
