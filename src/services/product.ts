@@ -1,5 +1,9 @@
-import { api } from '../lib/axios';
-import { ProductResponse, ProductsQueryParams, Product } from '../types/product';
+import { api } from "../lib/axios";
+import {
+  ProductResponse,
+  ProductsQueryParams,
+  Product,
+} from "../types/product";
 
 export interface CreateProductPayload {
   name: string;
@@ -7,6 +11,7 @@ export interface CreateProductPayload {
   total_diamond: number;
   discount: number;
   is_populer: boolean;
+  actual_price: number;
 }
 
 export interface UpdateProductPayload {
@@ -18,23 +23,26 @@ export interface UpdateProductPayload {
 }
 
 export const productService = {
-  getProducts: async (params?: ProductsQueryParams): Promise<ProductResponse> => {
+  getProducts: async (
+    params?: ProductsQueryParams
+  ): Promise<ProductResponse> => {
     const queryParams = new URLSearchParams();
-    
-    if (params?.page) queryParams.append('page', params.page.toString());
-    if (params?.limit) queryParams.append('limit', params.limit.toString());
-    if (params?.search) queryParams.append('search', params.search);
-    if (params?.is_populer !== undefined) queryParams.append('is_populer', params.is_populer.toString());
-    
+
+    if (params?.page) queryParams.append("page", params.page.toString());
+    if (params?.limit) queryParams.append("limit", params.limit.toString());
+    if (params?.search) queryParams.append("search", params.search);
+    if (params?.is_populer !== undefined)
+      queryParams.append("is_populer", params.is_populer.toString());
+
     const queryString = queryParams.toString();
-    const url = queryString ? `/products?${queryString}` : '/products';
-    
+    const url = queryString ? `/products?${queryString}` : "/products";
+
     const response = await api.get(url);
     return response.data;
   },
 
   createProduct: async (payload: CreateProductPayload): Promise<Product> => {
-    const response = await api.post('/products', payload);
+    const response = await api.post("/products", payload);
     return response.data;
   },
 
@@ -42,7 +50,10 @@ export const productService = {
     await api.delete(`/products/${id}`);
   },
 
-  updateProduct: async (id: string, payload: UpdateProductPayload): Promise<Product> => {
+  updateProduct: async (
+    id: string,
+    payload: UpdateProductPayload
+  ): Promise<Product> => {
     const response = await api.put(`/products/${id}`, payload);
     return response.data;
   },

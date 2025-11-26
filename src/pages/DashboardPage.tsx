@@ -5,28 +5,21 @@ import { Users, Package, CreditCard, DollarSign } from "lucide-react";
 // Dummy data untuk dashboard
 const dashboardStats = [
   {
-    title: "Total Pengguna",
-    value: "2,543",
-    change: "+12%",
-    icon: Users,
-    color: "text-blue-500",
-  },
-  {
-    title: "Total Game",
-    value: "45",
-    change: "+3%",
-    icon: Package,
-    color: "text-green-500",
-  },
-  {
-    title: "Transaksi",
+    title: "Jumlah Transaksi",
     value: "1,234",
     change: "+8%",
     icon: CreditCard,
     color: "text-purple-500",
   },
   {
-    title: "Pendapatan",
+    title: "Total Pendapatan",
+    value: "Rp 45.2M",
+    change: "+15%",
+    icon: DollarSign,
+    color: "text-yellow-500",
+  },
+  {
+    title: "Total Profit",
     value: "Rp 45.2M",
     change: "+15%",
     icon: DollarSign,
@@ -82,7 +75,7 @@ export function DashboardPage() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-3 md:grid-cols-3 lg:grid-cols-3 gap-6 mb-8">
         {dashboardStats.map((stat, index) => {
           const Icon = stat.icon;
           return (
@@ -95,9 +88,9 @@ export function DashboardPage() {
                   <p className="text-2xl font-bold text-foreground">
                     {stat.value}
                   </p>
-                  <p className="text-sm text-green-500 mt-1">
+                  {/* <p className="text-sm text-green-500 mt-1">
                     {stat.change} dari bulan lalu
-                  </p>
+                  </p> */}
                 </div>
                 <div className={`p-3 rounded-full bg-secondary ${stat.color}`}>
                   <Icon className="h-6 w-6" />
@@ -109,72 +102,7 @@ export function DashboardPage() {
       </div>
 
       {/* Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Recent Transactions */}
-        <Card className="p-6 gaming-card">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold text-foreground">
-              Transaksi Terbaru
-            </h2>
-            <Button variant="outline" size="sm">
-              Lihat Semua
-            </Button>
-          </div>
-          <div className="space-y-4">
-            {recentTransactions.map((transaction) => (
-              <div
-                key={transaction.id}
-                className="flex items-center justify-between p-3 rounded-lg bg-secondary/50"
-              >
-                <div className="flex-1">
-                  <p className="font-medium text-foreground">
-                    {transaction.user}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {transaction.game}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="font-medium text-foreground">
-                    {transaction.amount}
-                  </p>
-                  <p
-                    className={`text-sm ${
-                      transaction.status === "Berhasil"
-                        ? "text-green-500"
-                        : "text-yellow-500"
-                    }`}
-                  >
-                    {transaction.status}
-                  </p>
-                </div>
-                <div className="ml-4 text-right">
-                  <p className="text-xs text-muted-foreground">
-                    {transaction.time}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </Card>
-
-        {/* Revenue Chart Placeholder */}
-        <Card className="p-6 gaming-card">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold text-foreground">
-              Pendapatan Bulanan
-            </h2>
-            <Button variant="outline" size="sm">
-              Lihat Detail
-            </Button>
-          </div>
-          <div className="h-64 flex items-center justify-center bg-secondary/30 rounded-lg">
-            <p className="text-muted-foreground">
-              Chart akan ditampilkan di sini
-            </p>
-          </div>
-        </Card>
-      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8"></div>
     </>
   );
 }

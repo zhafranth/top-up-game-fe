@@ -131,6 +131,15 @@ export function TransactionPage() {
       ),
     },
     {
+      key: "actual_price",
+      header: "Actual Price",
+      render: (value) => (
+        <span className="font-medium text-green-500">
+          {formatRupiah(Number(value) || 0)}
+        </span>
+      ),
+    },
+    {
       key: "status",
       header: "Status",
       render: (value) => (

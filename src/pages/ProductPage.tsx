@@ -59,6 +59,15 @@ export function ProductPage() {
       ),
     },
     {
+      key: "actual_price",
+      header: "Actual Price",
+      render: (value) => (
+        <span className="font-medium text-green-500">
+          Rp {value?.toLocaleString("id-ID")}
+        </span>
+      ),
+    },
+    {
       key: "discount",
       header: "Discount (%)",
       render: (value) => (
