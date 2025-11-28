@@ -296,6 +296,7 @@ export function Home() {
         actual_price: selectedProduct.price,
         no_wa: whatsappNumber,
         target_id: Number(royalId),
+        product_id: selectedTopUp,
       });
       const trxId = createRes.transaction.id;
       setCreatedTransactionId(trxId);

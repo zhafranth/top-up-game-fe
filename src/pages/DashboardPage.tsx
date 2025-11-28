@@ -2,6 +2,9 @@ import { Card } from "@/components/ui/card";
 import { Users, Package, CreditCard, DollarSign } from "lucide-react";
 import { BarChartBase } from "@/components/BarChartBase";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { format } from "date-fns";
 
 // Dummy data untuk dashboard
 const dashboardStats = [
@@ -81,7 +84,9 @@ const transaksiBulanan2025 = [
 
 // Util format Rupiah untuk menampilkan omset
 const formatRupiah = (n: number) =>
-  new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR" }).format(n);
+  new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR" }).format(
+    n
+  );
 
 // Tambahan data dummy untuk ranking total transaksi per product
 const productTransactionsRanking = [
@@ -94,6 +99,60 @@ const productTransactionsRanking = [
 const maxTotal = Math.max(...productTransactionsRanking.map((p) => p.total));
 
 export function DashboardPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [startDate, setStartDate] = useState<Date | undefined>();
+  const [endDate, setEndDate] = useState<Date | undefined>();
+
+  useEffect(() => {
+    const startParam = searchParams.get("start") ?? undefined;
+    const endParam = searchParams.get("end") ?? undefined;
+
+    if (!startParam && !endParam) {
+      const now = new Date();
+      const end = new Date(now);
+      end.setHours(0, 0, 0, 0);
+      const start = new Date(now);
+      start.setDate(start.getDate() - 7);
+      start.setHours(0, 0, 0, 0);
+      setStartDate(start);
+      setEndDate(end);
+    } else {
+      setStartDate(startParam ? new Date(startParam) : undefined);
+      setEndDate(endParam ? new Date(endParam) : undefined);
+    }
+  }, [searchParams]);
+
+  const updateQueryParams = (next: Partial<{ start?: Date; end?: Date }>) => {
+    const params = new URLSearchParams(searchParams.toString());
+
+    if (next.start !== undefined) {
+      if (!next.start) {
+        params.delete("start");
+      } else {
+        params.set("start", format(next.start, "yyyy-MM-dd'T'HH:mm"));
+      }
+    }
+    if (next.end !== undefined) {
+      if (!next.end) {
+        params.delete("end");
+      } else {
+        params.set("end", format(next.end, "yyyy-MM-dd'T'HH:mm"));
+      }
+    }
+
+    setSearchParams(params);
+  };
+
+  const handleStartDateChange = (date?: Date) => {
+    setStartDate(date);
+    updateQueryParams({ start: date });
+  };
+
+  const handleEndDateChange = (date?: Date) => {
+    setEndDate(date);
+    updateQueryParams({ end: date });
+  };
+
   return (
     <>
       {/* Header */}
@@ -104,7 +163,13 @@ export function DashboardPage() {
           top-up games Anda.
         </p>
         <div className="w-2/5 mt-5">
-          <DateRangePicker showTime={false} />
+          <DateRangePicker
+            showTime={false}
+            startDate={startDate}
+            endDate={endDate}
+            onStartDateChange={handleStartDateChange}
+            onEndDateChange={handleEndDateChange}
+          />
         </div>
       </div>
 
@@ -187,15 +252,23 @@ export function DashboardPage() {
                   : "bg-secondary text-foreground";
               return (
                 <div key={item.product} className="flex items-center gap-4">
-                  <div className={`w-7 h-7 flex items-center justify-center rounded-full text-xs font-semibold ${rankClass}`}>
+                  <div
+                    className={`w-7 h-7 flex items-center justify-center rounded-full text-xs font-semibold ${rankClass}`}
+                  >
                     {index + 1}
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center justify-between">
-                      <span className="font-medium text-foreground">{item.product}</span>
+                      <span className="font-medium text-foreground">
+                        {item.product}
+                      </span>
                       <div className="text-right">
-                        <div className="text-sm text-muted-foreground">{item.total} transaksi</div>
-                        <div className="text-sm font-medium text-foreground">{formatRupiah(item.revenue)}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {item.total} transaksi
+                        </div>
+                        <div className="text-sm font-medium text-foreground">
+                          {formatRupiah(item.revenue)}
+                        </div>
                       </div>
                     </div>
                   </div>

@@ -6,6 +6,7 @@ export interface CreateTransactionPayload {
   actual_price: number;
   no_wa: string;
   target_id: number;
+  product_id: number;
 }
 
 export interface Transaction {

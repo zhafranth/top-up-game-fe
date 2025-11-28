@@ -11,6 +11,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Input } from "./input";
+import { formatDate } from "@/lib/date";
 
 interface DateRangePickerProps {
   startDate?: Date;
@@ -92,7 +93,10 @@ export function DateRangePicker({
             >
               <CalendarIcon className="mr-2 h-4 w-4" />
               {startDate ? (
-                format(startDate, "dd-MM-yy HH:mm:ss")
+                formatDate(
+                  startDate,
+                  showTime ? "dd-MM-yy HH:mm:ss" : "DD MMM YYYY"
+                )
               ) : (
                 <span>{startPlaceholder}</span>
               )}
@@ -154,7 +158,10 @@ export function DateRangePicker({
             >
               <CalendarIcon className="mr-2 h-4 w-4" />
               {endDate ? (
-                format(endDate, "dd-MM-yy HH:mm:ss")
+                formatDate(
+                  endDate,
+                  showTime ? "dd-MM-yy HH:mm:ss" : "dd MMM YYYY"
+                )
               ) : (
                 <span>{endPlaceholder}</span>
               )}
@@ -202,14 +209,16 @@ export function DateRangePicker({
           </PopoverContent>
         </Popover>
       </div>
-      <button
-        onClick={() => {
-          onClear?.();
-        }}
-        className="text-muted-foreground"
-      >
-        <XCircle size={14} />
-      </button>
+      {onClear && (
+        <button
+          onClick={() => {
+            onClear?.();
+          }}
+          className="text-muted-foreground"
+        >
+          <XCircle size={14} />
+        </button>
+      )}
     </div>
   );
 }
