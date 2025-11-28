@@ -2,6 +2,7 @@ export interface Product {
   id: number;
   name: string;
   price: number;
+  actual_price: number;
   discount: number;
   is_populer: boolean;
   total_diamond: number;

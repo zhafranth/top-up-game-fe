@@ -293,7 +293,8 @@ export function Home() {
       const createRes = await transactionService.createTransaction({
         total_diamond: selectedProduct.total_diamond,
         total_amount: selectedProduct.price,
-        actual_price: selectedProduct.price,
+        price: selectedProduct.price,
+        actual_price: selectedProduct.actual_price,
         no_wa: whatsappNumber,
         target_id: Number(royalId),
         product_id: selectedTopUp,

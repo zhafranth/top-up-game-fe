@@ -4,6 +4,7 @@ export interface CreateTransactionPayload {
   total_diamond: number;
   total_amount: number;
   actual_price: number;
+  price: number;
   no_wa: string;
   target_id: number;
   product_id: number;
@@ -44,6 +45,17 @@ export interface InitiateQrisResponse {
     transaction_id?: string; // provider id (optional)
     raw?: any;
   };
+}
+
+export interface DashboardTransactions {
+  ranking_products: {
+    name: string;
+    total_pendapatan: number;
+    total_transaksi: number;
+  }[];
+  total_income: number;
+  total_profit: number;
+  total_transactions: number;
 }
 
 // Response for public status check by merchant_transaction_id and no_wa
@@ -116,5 +128,13 @@ export const transactionService = {
   updateTransactionStatus: async (id: number, status: string) => {
     const response = await api.put(`/transactions/${id}`, { status });
     return response.data;
+  },
+
+  dashboarTransactions: async (params: {
+    start: string;
+    end: string;
+  }): Promise<DashboardTransactions> => {
+    const response = await api.get("/dashboard", { params });
+    return response.data as DashboardTransactions;
   },
 };
