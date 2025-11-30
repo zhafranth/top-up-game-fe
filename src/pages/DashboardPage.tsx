@@ -7,22 +7,6 @@ import { useSearchParams } from "react-router-dom";
 import { format } from "date-fns";
 import { useDashboardTransactions } from "@/hooks/useTransactions";
 
-// Data dummy total transaksi per bulan tahun 2025
-const transaksiBulanan2025 = [
-  { bulan: "Jan", total: 120 },
-  { bulan: "Feb", total: 95 },
-  { bulan: "Mar", total: 130 },
-  { bulan: "Apr", total: 150 },
-  { bulan: "Mei", total: 170 },
-  { bulan: "Jun", total: 160 },
-  { bulan: "Jul", total: 175 },
-  { bulan: "Agu", total: 180 },
-  { bulan: "Sep", total: 165 },
-  { bulan: "Okt", total: 190 },
-  { bulan: "Nov", total: 200 },
-  { bulan: "Des", total: 210 },
-];
-
 // Util format Rupiah untuk menampilkan omset
 const formatRupiah = (n: number) =>
   new Intl.NumberFormat("id-ID", {
@@ -34,6 +18,9 @@ export function DashboardPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [startDate, setStartDate] = useState<Date | undefined>();
   const [endDate, setEndDate] = useState<Date | undefined>();
+  const [activeMetric, setActiveMetric] = useState<
+    "transactions" | "income" | "profit"
+  >("transactions");
 
   const { data: dashboardTransactions } = useDashboardTransactions({
     start: startDate ? format(startDate, "yyyy-MM-dd") : "",
@@ -46,6 +33,8 @@ export function DashboardPage() {
     total_profit = 0,
     total_transactions = 0,
     transactions = [],
+    incomes = [],
+    profits = [],
   } = dashboardTransactions ?? {};
 
   const info = [
@@ -175,24 +164,57 @@ export function DashboardPage() {
                 Total Transaksi per Bulan (2025)
               </h2>
               <div className="flex flex-wrap items-center gap-2 mt-3">
-                <div className="feature-chip text-violet-300 border-violet-400 ring-2 ring-violet-400">
+                <div
+                  className={`feature-chip ${
+                    activeMetric === "transactions"
+                      ? "text-violet-300 border-violet-400 ring-2 ring-violet-400"
+                      : "text-muted-foreground"
+                  }`}
+                  onClick={() => setActiveMetric("transactions")}
+                >
                   <span className="font-medium">Jumlah Transaksi</span>
                 </div>
-                <div className="feature-chip text-muted-foreground">
+                <div
+                  className={`feature-chip ${
+                    activeMetric === "income"
+                      ? "text-violet-300 border-violet-400 ring-2 ring-violet-400"
+                      : "text-muted-foreground"
+                  }`}
+                  onClick={() => setActiveMetric("income")}
+                >
                   <span className="font-medium">Total Pendapatan</span>
                 </div>
-                <div className="feature-chip text-muted-foreground">
+                <div
+                  className={`feature-chip ${
+                    activeMetric === "profit"
+                      ? "text-violet-300 border-violet-400 ring-2 ring-violet-400"
+                      : "text-muted-foreground"
+                  }`}
+                  onClick={() => setActiveMetric("profit")}
+                >
                   <span className="font-medium">Total Profit</span>
                 </div>
               </div>
             </div>
           </div>
           <BarChartBase
-            data={transactions}
+            data={
+              activeMetric === "transactions"
+                ? transactions
+                : activeMetric === "income"
+                ? incomes
+                : profits
+            }
             xKey="date"
-            yKey="total_transactions"
+            yKey={
+              activeMetric === "transactions"
+                ? "total_transactions"
+                : activeMetric === "income"
+                ? "income"
+                : "profit"
+            }
             height={300}
-            barColor="#8b5cf6" // violet-500
+            barColor="#8b5cf6"
             yAxisFormatter={(v) => `${v}`}
           />
         </Card>

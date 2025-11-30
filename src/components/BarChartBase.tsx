@@ -40,12 +40,23 @@ export function BarChartBase({
   showLabels = true,
   labelPosition = "top",
 }: BarChartBaseProps) {
+  // Tambahkan padding dinamis di atas nilai maksimum agar label tidak terpotong
+  const maxY = Array.isArray(data) && data.length > 0
+    ? data.reduce((max, item) => {
+        const raw = item[yKey];
+        const val = typeof raw === "number" ? raw : Number(raw);
+        return Math.max(max, isNaN(val) ? 0 : val);
+      }, 0)
+    : 0;
+  const pad = Math.max(1, Math.ceil(maxY * 0.1));
+  const yDomain: [number, number] = [0, maxY > 0 ? maxY + pad : 1];
+
   return (
     <div className="w-full" style={{ height }}>
       <ResponsiveContainer width="100%" height="100%">
         <RechartsBarChart
           data={data}
-          margin={{ top: 10, right: 20, left: 10, bottom: 20 }}
+          margin={{ top: 20, right: 20, left: 10, bottom: 20 }}
         >
           <CartesianGrid
             strokeDasharray="3 3"
@@ -62,6 +73,8 @@ export function BarChartBase({
             tickFormatter={yAxisFormatter}
             tickLine={false}
             axisLine={{ stroke: "rgba(255,255,255,0.2)" }}
+            allowDecimals={false}
+            domain={yDomain}
           />
           <Tooltip cursor={{ fill: "rgba(99,102,241,0.08)" }} />
           <Legend />
@@ -72,7 +85,7 @@ export function BarChartBase({
             radius={[6, 6, 0, 0]}
           >
             {showLabels && (
-              <LabelList dataKey={yKey} position={labelPosition} />
+              <LabelList dataKey={yKey} position={labelPosition} offset={6} />
             )}
           </Bar>
         </RechartsBarChart>
