@@ -20,6 +20,7 @@ export interface UpdateProductPayload {
   total_diamond: number;
   discount: number;
   is_populer: boolean;
+  actual_price: number;
 }
 
 export const productService = {
