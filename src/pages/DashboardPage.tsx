@@ -45,6 +45,7 @@ export function DashboardPage() {
     total_income = 0,
     total_profit = 0,
     total_transactions = 0,
+    transactions = [],
   } = dashboardTransactions ?? {};
 
   const info = [
@@ -187,9 +188,9 @@ export function DashboardPage() {
             </div>
           </div>
           <BarChartBase
-            data={transaksiBulanan2025}
-            xKey="bulan"
-            yKey="total"
+            data={transactions}
+            xKey="date"
+            yKey="total_transactions"
             height={300}
             barColor="#8b5cf6" // violet-500
             yAxisFormatter={(v) => `${v}`}

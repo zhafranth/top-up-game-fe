@@ -56,6 +56,10 @@ export interface DashboardTransactions {
   total_income: number;
   total_profit: number;
   total_transactions: number;
+  transactions: {
+    date: string;
+    total_transactions: number;
+  }[];
 }
 
 // Response for public status check by merchant_transaction_id and no_wa
