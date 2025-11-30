@@ -19,7 +19,11 @@ import { Product } from "../types/product";
 import { ProductCardSkeleton } from "../components/ProductCardSkeleton";
 import { transactionService } from "../services/transaction";
 import { QRCodeCanvas } from "qrcode.react";
-import type { TransactionStatusResponse } from "../services/transaction";
+import type {
+  Transaction,
+  TransactionStatusResponse,
+} from "../services/transaction";
+import ModalConfirmationSuccessPayment from "@/components/ModalConfirmationSuccessPayment";
 
 export function Home() {
   // const navigate = useNavigate();
@@ -27,6 +31,10 @@ export function Home() {
   const [whatsappNumber, setWhatsappNumber] = useState("");
   const [selectedTopUp, setSelectedTopUp] = useState<number | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [openSuccessConfirmation, setOpenSuccessConfirmation] = useState(false);
+  const [transactionData, setTransactionData] = useState<Transaction | null>(
+    null
+  );
   const [showConfetti, setShowConfetti] = useState(false);
   const [whatsappError, setWhatsappError] = useState("");
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -61,6 +69,14 @@ export function Home() {
   const [checkResult, setCheckResult] =
     useState<TransactionStatusResponse | null>(null);
 
+  const resetForm = () => {
+    setRoyalId("");
+    setWhatsappNumber("");
+    setSelectedTopUp(null);
+    setNickname("");
+    setWhatsappError("");
+  };
+
   // Reset state ketika dialog dibuka ulang
   useEffect(() => {
     if (isDialogOpen) {
@@ -83,7 +99,8 @@ export function Home() {
         x.includes("success") ||
         x.includes("settlement") ||
         x.includes("completed") ||
-        x.includes("captured")
+        x.includes("captured") ||
+        x.includes("processing")
       );
     };
 
@@ -107,8 +124,11 @@ export function Home() {
         setBackendStatus(s);
         if (s) {
           if (isSuccess(s)) {
+            setTransactionData(trx);
             setPaymentStatus("success");
             setShowConfetti(true);
+            setIsDialogOpen(false);
+            setOpenSuccessConfirmation(true);
             // Stop polling on success
             if (intervalId) clearInterval(intervalId);
             // Hide confetti after a while
@@ -354,7 +374,7 @@ export function Home() {
     <div className="min-h-screen relative">
       {/* Confetti Animation */}
       {showConfetti && (
-        <div className="fixed inset-0 z-50 pointer-events-none h-screen w-screen">
+        <div className="fixed inset-0 z-[99999] pointer-events-none h-screen w-screen">
           <Lottie
             animationData={confettiAnimation}
             style={{ width: "100vw", height: "100vh" }}
@@ -929,6 +949,14 @@ export function Home() {
           </div>
         )}
       </div>
+      <ModalConfirmationSuccessPayment
+        onOpenChange={() => {
+          setOpenSuccessConfirmation((prev) => !prev);
+          resetForm();
+        }}
+        data={transactionData}
+        open={openSuccessConfirmation}
+      />
 
       {/* Floating WhatsApp Button */}
       <div className="fixed bottom-6 right-6 z-50">
