@@ -27,4 +27,5 @@ export interface ProductsQueryParams {
   limit?: number;
   search?: string;
   is_populer?: boolean;
+  isSortedPrice?: boolean;
 }

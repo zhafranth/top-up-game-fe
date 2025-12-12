@@ -163,7 +163,7 @@ export function Home() {
     data: productsResponse,
     isLoading,
     error,
-  } = useProducts({ limit: 20 });
+  } = useProducts({ limit: 20, isSortedPrice: true });
 
   const heroImages = [
     "https://images.unsplash.com/photo-1542751371-adc38448a05e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
@@ -916,7 +916,7 @@ export function Home() {
                       >
                         Tutup
                       </button>
-                      {qrisData?.redirectUrl && (
+                      {/* {qrisData?.redirectUrl && (
                         <a
                           href={qrisData.redirectUrl}
                           target="_blank"
@@ -932,7 +932,7 @@ export function Home() {
                         className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
                       >
                         Saya sudah bayar
-                      </button>
+                      </button> */}
                       {/* <button
                         type="button"
                         onClick={initiateQrisAgain}

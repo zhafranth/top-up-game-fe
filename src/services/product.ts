@@ -34,6 +34,8 @@ export const productService = {
     if (params?.search) queryParams.append("search", params.search);
     if (params?.is_populer !== undefined)
       queryParams.append("is_populer", params.is_populer.toString());
+    if (params?.isSortedPrice !== undefined)
+      queryParams.append("isSortedPrice", params.isSortedPrice.toString());
 
     const queryString = queryParams.toString();
     const url = queryString ? `/products?${queryString}` : "/products";
